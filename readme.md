@@ -17,6 +17,7 @@ License:            GPLv3 or later
 License URI:        https://www.gnu.org/licenses/gpl.html  
 Tags:               software registration, software registry, software license, software product, github hosting, {eac}SoftwareRegistry  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
+Github URI:         https://github.com/EarthAsylum/eacsoftwareregistry-software-taxonomy  
 </samp></details>
 
 **_Software Product Taxonomy - Customize {eac}SoftwareRegistry with options, licensing, client messaging, and Github hosting for each software product._**
