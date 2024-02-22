@@ -148,7 +148,7 @@ In addition:
 
 1. If your plugin is registered via {eac}SoftwareRegistry, you may add an authentication header including the registration key which will then be verified as valid and active before updating:
 
-    'headers'   => ['Accept' => 'application/json',
+        'headers'   => ['Accept' => 'application/json',
                     'Authentication' => 'token '.base64_encode($this->getRegistrationKey()) ],
 
 2. You may pass a `environment` argument in the URL with the WordPress environment:
