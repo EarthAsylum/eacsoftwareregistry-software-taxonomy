@@ -16,7 +16,7 @@ trait software_product_github_hosting
 	/**
 	 * @var string trait version
 	 */
-	private $TRAIT_VERSION 		= '24.0222.1';
+	private $TRAIT_VERSION 		= '24.0223.1';
 
 	/**
 	 * @var string local folder
@@ -803,6 +803,7 @@ trait software_product_github_hosting
 		/* get values from readme.txt */
 		$plugin_info = array
 		(
+			"slug" 			=> 	dirname($this->options['plugin_slug']),					// plugin directory
 			"plugin" 		=> 	$this->options['plugin_slug'],							// main plugin file once installed
 			"name" 			=> 	\eacParseReadme::getTitle() 		?: $this->options['name'],	// title
 			"homepage" 		=> 	\eacParseReadme::getHomepage() 		?: $homepage,		// url
@@ -1159,8 +1160,8 @@ trait software_product_github_hosting
 	private function getPluginInfoUpdate(array $plugin_info): array
 	{
 		$plugin = $plugin_info['plugin'];
-		$plugin_info[ $plugin ] = array(
-				'slug'				=> dirname($plugin_info['plugin']),
+		$update = array(
+				'slug'				=> $plugin_info['slug'],
 				'plugin' 			=> $plugin_info['plugin'],
 				'version'			=> $plugin_info['version'],
 				'url'				=> $plugin_info['homepage'],
@@ -1174,17 +1175,21 @@ trait software_product_github_hosting
 		{
 			if (!empty($plugin_info[$type]))
 			{
-				$plugin_info[ $plugin ][$type] = [
+				$update[$type] = [
 					'1x' 				=> $plugin_info[$type]['low'],
 					'2x' 				=> $plugin_info[$type]['high'],
 				];
+				if (isset($plugin_info[$type]['svg'])) {
+					$update[$type]['svg'] = $plugin_info[$type]['svg'];
+				}
 			}
 		}
 		if (!empty($plugin_info['section']['upgrade_notice']))
 		{
-			$plugin_info[ $plugin ]['upgrade_notice'] = $plugin_info['section']['upgrade_notice'];
+			$update['upgrade_notice'] = $plugin_info['section']['upgrade_notice'];
 		}
 
+		$plugin_info[ $plugin ] = $update;
 		return $plugin_info;
 	}
 

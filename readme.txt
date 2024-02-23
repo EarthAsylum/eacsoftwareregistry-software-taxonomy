@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.0
-Last Updated:       22-Feb-2024
+Stable tag:         2.0.1
+Last Updated:       23-Feb-2024
 Requires at least:  5.5.0
 Tested up to:       6.4
 Requires PHP:       7.4
@@ -146,9 +146,9 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 
 == Upgrade Notice ==
 
-Requires {eac}SoftwareRegistry version 1.3+
+Requires {eac}SoftwareRegistry version 1.3.2+
 
-= 2.0.0 =
+= 2.0 =
 
 Requires {eac}Doojigger version 2.5+.
 Requires {eac}Readme version 1.4+ for GitHub hosting.
@@ -166,6 +166,11 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.1 – February 23, 2024 =
+
++   Added 'slug' to json array.
++   Support 'svg' image type if present.
 
 = Version 2.0.0 – February 22, 2024 =
 
