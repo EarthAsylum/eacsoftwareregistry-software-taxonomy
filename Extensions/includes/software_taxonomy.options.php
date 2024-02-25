@@ -162,11 +162,11 @@ $this->term_option_fields =
 						'label'		=>	'Repository Source',
 						'options'	=>	[	'Latest Release'			=> 'latest_release',
 											'Default Branch (aka main)'	=> 'default_branch',
-											'Either (latest or default)' => 'any' ],
+											'Either (latest or default)' => 'either' ],
 						'default'	=>	'latest_release',
 						'info'		=>	"Select which source to use from the repository.",
 						'help'		=>	"[info]<br>Use the release feature in GitHub to control when your plugin is available for production use. ".
-										"If your WordPress updater passes an 'environment' value in the update uri and this fields is set to 'any', ".
+										"If your WordPress updater passes an 'environment' value in the update uri and this fields is set to 'either', ".
 										"the 'latest_release' will be used for 'production' environments while 'default_branch' will be used for all others."
 			),
 			'github_readme'			=> array(

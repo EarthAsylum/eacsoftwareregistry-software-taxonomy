@@ -16,7 +16,7 @@ trait software_product_github_hosting
 	/**
 	 * @var string trait version
 	 */
-	private $TRAIT_VERSION 		= '24.0223.1';
+	private $TRAIT_VERSION 		= '24.0225.1';
 
 	/**
 	 * @var string local folder
@@ -57,16 +57,6 @@ trait software_product_github_hosting
 	private $IMAGE_TYPES 		= ['bmp','gif','jpg','jpeg','png','svg','webp'];
 
 	/**
-	 * @var string transient name
-	 */
-	private $github_transient 	= 'github_is_enabled';
-
-	/**
-	 * @var array route pieces (slug,type)
-	 */
-	private $route 				= [];
-
-	/**
 	 * @var array the current term (as array), with meta data and extended properties
 	 */
 	private $options 			= [
@@ -74,7 +64,7 @@ trait software_product_github_hosting
 		'repository' 			=> '',					// Github {owner}/{repo}
 		'token'					=> '',					// personal access token
 		'readme'				=> '/readme.txt',		// path within repository to readme.txt
-		'source'				=> 'any',				// 'latest_release' | 'default_branch' | 'any'
+		'source'				=> 'either',			// 'latest_release' | 'default_branch' | 'any'
 		// not from term, may be set from repository custom property (wp-sections)
 		'sections' 				=> [
 			'description'				=>	'description',
@@ -93,6 +83,11 @@ trait software_product_github_hosting
 		],
 		'override'				=> [/* name => value */],
 	];
+
+	/**
+	 * @var array route pieces (slug,type)
+	 */
+	private $route 				= [];
 
 	/**
 	 * @var string plugin slug (dirname)
@@ -120,6 +115,11 @@ trait software_product_github_hosting
 	private $release 			= null;
 
 	/**
+	 * @var string transient name
+	 */
+	private $github_transient 	= 'github_is_enabled';
+
+	/**
 	 * @var string api endpoint
 	 */
 	private $github_namespace 	= null;
@@ -135,7 +135,7 @@ trait software_product_github_hosting
 	private $fs					= null;
 
 	/**
-	 * @var string|int|bool default cache setting
+	 * @var int default cache setting
 	 */
 	private $cache_default		= HOUR_IN_SECONDS * 4;
 
@@ -155,6 +155,10 @@ trait software_product_github_hosting
 
 			$this->init_register_rewrites();
 			add_action( 'rest_api_init', 	array($this, 'init_register_routes') );
+
+			$this->fs = \eacDoojigger()->fs->link_wp_filesystem(true,
+					'GitHub Hosting requires WordPress file access to manage assets.'
+			);
 		}
 	}
 
@@ -204,19 +208,17 @@ trait software_product_github_hosting
 		$this->LOCAL_ASSETS 	 = $this->LOCAL_PATH.'/assets';
 		$this->LOCAL_URL 		.= strtolower($slugdir).'/assets';
 
-		if ($this->fs = \eacDoojigger()->fs->link_wp_filesystem(true,
-				'GitHub Hosting requires WordPress file access to manage assets.'
-			))
+		if ($this->fs)
 		{
 			if (!$this->fs->is_dir($this->LOCAL_PATH )) {
 				$this->fs->mkdir($this->LOCAL_PATH,FS_CHMOD_DIR | 0660);
-				$this->cache_default = 'no';
+				$this->cache_default = 0;
 			}
 			// because touch() doesn't always work via $fs
 			$this->LAST_UPDATE	= ($this->fs->is_file($this->LOCAL_PATH .'/.github_last_update'))
 					? strtotime($this->fs->get_contents($this->LOCAL_PATH .'/.github_last_update')) : 0;
 			if (!$this->LAST_UPDATE) {
-				$this->cache_default = 'no';
+				$this->cache_default = 0;
 			}
 		}
 
@@ -233,6 +235,15 @@ trait software_product_github_hosting
 	private function github_stream_context(string $context='json')
 	{
 		static $github_header = "X-GitHub-Api-Version: 2022-11-28" . "\r\n";
+		static $agent_header = null;
+
+		if (!$agent_header) {
+			require ABSPATH . WPINC . '/version.php';
+			$agent_header = "User-Agent: " .
+							'WordPress/'.$wp_version.'; ' .
+							$this->pluginName.'/'.$this->TRAIT_VERSION.'; ' .
+							home_url( '/' ) . "\r\n";
+		}
 
 		$auth_header = ($this->options['token'])
 				? "Authorization: Token ".$this->options['token'] . "\r\n" : "";
@@ -247,16 +258,19 @@ trait software_product_github_hosting
 			case 'none':
 				$accept_header = "";
 				break;
+			case 'json':
 			default:
 				$accept_header = "Accept: application/vnd.github+json, application/json" . "\r\n";
 		}
+
+
 		$context = stream_context_create(array(
 			'http'	=> array(
 				'method'	=> 	"GET",
 				'header'	=> 	$auth_header 	.
 								$accept_header 	.
 								$github_header 	.
-								"User-Agent: WordPress; ".$this->options['repository'].'; '. home_url( '/' )."\r\n",
+								$agent_header,
 			)
 		));
 		return $context;
@@ -290,6 +304,7 @@ trait software_product_github_hosting
 		$expresion	= '^' . $api_shortcut . '/(branch/|release/)?(.+)([\.\-\+])(json|zip|proxy)(\?.*)?$';
 		$endpont	= 'index.php?rest_route=/'.$this->github_namespace.'/$matches[1]$matches[2]$matches[3]$matches[4]';
 		$rules 		= get_option( 'rewrite_rules', array() );
+
 		add_rewrite_rule($expresion,$endpont,'top');
 		if ( ! isset($rules[$expresion]) ) {
 			flush_rewrite_rules();
@@ -303,7 +318,11 @@ trait software_product_github_hosting
 	 */
 	public function init_register_routes($restServer): void
 	{
-		/* when getting the update api json file */
+		if (defined( 'EAC_GITHUB_CACHE_LIFETIME' ) && is_int( EAC_GITHUB_CACHE_LIFETIME )) {
+			$this->cache_default = EAC_GITHUB_CACHE_LIFETIME;
+		}
+
+		/* when getting the info/update api json file */
 		register_rest_route
 		(
 			$this->github_namespace, '/(?P<route_source>branch/|release/)?(?P<route_slug>.+)(?P<route_delim>[\.\-\+])json',
@@ -318,7 +337,7 @@ trait software_product_github_hosting
 			])
 		);
 
-		/* when downloading via the WordPress plugin update api (download_link) */
+		/* when downloading via the WordPress plugin update api (download_link/package) */
 		register_rest_route
 		(
 			$this->github_namespace, '/(?P<route_source>branch/|release/)(?P<route_slug>.+)[\.\-\+]proxy',
@@ -333,7 +352,7 @@ trait software_product_github_hosting
 			])
 		);
 
-		/* when downloading zip file (i.e. from e-comm product link) */
+		/* when downloading zip file (i.e. from external link) */
 		register_rest_route
 		(
 			$this->github_namespace, '/(?P<route_source>branch/|release/)?(?P<route_slug>.+)[\.\-\+]zip',
@@ -368,8 +387,10 @@ trait software_product_github_hosting
 		/* validate type */
 		if (! in_array($this->route['type'],['info','proxy','download']) )
 		{
-			return new \WP_Error( 'github_invalid_route', __("invalid route type requested"),
-				[ 'status' => 400, 'route' => $this->route ]);
+			return $this->log_response($request,
+				new \WP_Error( 'github_invalid_route', __("invalid route type requested"),
+					[ 'status' => 400, 'route' => $this->route ])
+			);
 		}
 
 		/* validate source */
@@ -377,16 +398,22 @@ trait software_product_github_hosting
 		{
 			switch (trim($this->route['source'],'/')) {
 				case 'branch':
+				case 'default_branch':
 					$this->route['source'] = 'default_branch';
 					break;
 				case 'release':
+				case 'latest_release':
 					$this->route['source'] = 'latest_release';
 					break;
 				case 'any':
+				case 'either':
+					$this->route['source'] = 'either';
 					break;
 				default:
-					return new \WP_Error( 'github_invalid_source', __("invalid route source requested"),
-						[ 'status' => 400, 'route' => $this->route ]);
+					return $this->log_response($request,
+						new \WP_Error( 'github_invalid_source', __("invalid route source requested"),
+							[ 'status' => 400, 'route' => $this->route ])
+					);
 			}
 		}
 
@@ -401,8 +428,10 @@ trait software_product_github_hosting
 					$registration = base64_decode($registration);
 					break;
 				default:
-					return new \WP_Error( 'github_unauthorized', __("unauthorized request"),
-						[ 'status' => 401, 'route' => $this->route ]);
+					return $this->log_response($request,
+						new \WP_Error( 'github_unauthorized', __("unauthorized request"),
+							[ 'status' => 401, 'route' => $this->route ])
+					);
 			}
 		} else {
 			$registration = sanitize_text_field($request->get_param('registration'));
@@ -418,8 +447,10 @@ trait software_product_github_hosting
 			);
 			if (is_wp_error($registration) || !is_array($registration) || (in_array($registration['registry_status'],['expired','terminated'])))
 			{
-				return new \WP_Error( 'github_unauthorized', __("invalid or inactive registration"),
-					[ 'status' => 401, 'route' => $this->route ]);
+				return $this->log_response($request,
+					new \WP_Error( 'github_unauthorized', __("invalid or inactive registration"),
+						[ 'status' => 401, 'route' => $this->route ])
+				);
 			}
 		}
 
@@ -428,16 +459,28 @@ trait software_product_github_hosting
 		{
 			if (! $term = get_term_by( 'slug', $this->route['slug'], self::TAXONOMY_NAME))
 			{
-				return new \WP_Error( 'github_invalid_slug', __("requested slug name not found"),
-					[ 'status' => 404, 'route' => $this->route ]);
+				return $this->log_response($request,
+					new \WP_Error( 'github_invalid_slug', __("requested slug name not found"),
+						[ 'status' => 404, 'route' => $this->route ])
+				);
 			}
 
 			if ( (! $this->get_term_meta($term->term_id, 'github_plugin_slug'))
 			||   (! $this->get_term_meta($term->term_id, 'github_repository')) )
 			{
-				return new \WP_Error( 'github_invalid_config', __("requested slug not configured"),
-					[ 'status' => 412, 'route' => $this->route ]);
+				return $this->log_response($request,
+					new \WP_Error( 'github_invalid_config', __("requested slug not configured"),
+						[ 'status' => 412, 'route' => $this->route ])
+				);
 			}
+		}
+
+		/* set, maybe disable caching */
+		$cache_ttl = $request->get_param('cache');
+		if (! wp_using_ext_object_cache() || $this->isFalse($cache_ttl)) {
+			$this->cache_default = 0;
+		} else if (is_int($cache_ttl)) {
+			$this->cache_default = $cache_ttl;
 		}
 
 		/**
@@ -469,8 +512,11 @@ trait software_product_github_hosting
 		{
 			set_time_limit(120);
 			$terms = get_terms( ['taxonomy' => self::TAXONOMY_NAME, 'hide_empty' => false] );
-			if (is_wp_error($terms)) return $terms;
-			$result = [];
+			if (is_wp_error($terms))
+			{
+				return $this->log_response($request,$terms);
+			}
+			$result = $package = [];
 			foreach ($terms as $term)
 			{
 				$this->route['slug'] = $request['route_slug'] = $term->slug;
@@ -479,16 +525,25 @@ trait software_product_github_hosting
 				{
 					continue;
 				}
-				$plugin = $this->get_repository($request);
-				$result[ $plugin['plugin'] ] = $plugin[ $plugin['plugin'] ];
+				$plugin = $this->get_from_repository($request);
+				if (!is_wp_error($plugin))
+				{
+					$result[ $plugin['slug'] ] = $plugin[ $plugin['slug'] ];
+					$package[] 	= $plugin['eac_github_hosting']['package'];
+				}
 			}
+			$result['eac_github_hosting'] = $plugin['eac_github_hosting'];
+			$result['eac_github_hosting']['package'] = $package;
+			$this->route['slug'] = $request['route_slug'] = 'plugin_info';
 
 			/**
 			 * filter {classname}_github_api_plugin_info
 			 * @param 	array	$plugin array.
 			 * @param 	object	WP_REST_Request Request object.
 			 */
-			return $this->apply_filters('github_api_plugin_info',$result,$request);
+			return $this->log_response($request,
+				$this->apply_filters('github_api_plugin_info',$result,$request)
+			);
 		}
 
 		/**
@@ -496,7 +551,9 @@ trait software_product_github_hosting
 		 * @param 	array	$plugin_info array.
 		 * @param 	object	WP_REST_Request Request object.
 		 */
-		return $this->apply_filters('github_api_info_response',$this->get_repository($request),$request);
+		return $this->log_response($request,
+			$this->apply_filters('github_api_info_response',$this->get_from_repository($request),$request)
+		);
 	}
 
 
@@ -504,7 +561,7 @@ trait software_product_github_hosting
 	 * rest_api_proxy - download via proxy
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
-	 * @return void|WP_Error
+	 * @return 	void|WP_Error
 	 */
 	public function rest_api_proxy(\WP_REST_Request $request)
 	{
@@ -514,13 +571,11 @@ trait software_product_github_hosting
 		 */
 		$this->do_action('github_api_proxy',$request);
 
-		$plugin_info = $this->get_repository($request);
+		$plugin_info = $this->get_from_repository($request);
 
-		if (! $plugin_info["download_link"])
-		{
-			return new \WP_Error( 'github_not_found', __("requested file not found"),
-				[ 'status' => 404, 'route' => $this->route ]);
-		}
+		$this->log_response($request,$plugin_info);
+
+		if (is_wp_error($plugin_info)) return $plugin_info;
 
 		return $this->get_proxy_download($request,$plugin_info);
 	}
@@ -530,7 +585,7 @@ trait software_product_github_hosting
 	 * rest_api_download - redirect to version download file
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
-	 * @return void|WP_Error
+	 * @return 	rest response|WP_Error
 	 */
 	public function rest_api_download(\WP_REST_Request $request)
 	{
@@ -540,25 +595,23 @@ trait software_product_github_hosting
 		 */
 		$this->do_action('github_api_download',$request);
 
-		$plugin_info = $this->get_repository($request);
+		$plugin_info = $this->get_from_repository($request);
 
-		if (! $plugin_info["download_link"])
-		{
-			return new \WP_Error( 'github_not_found', __("requested file not found"),
-				[ 'status' => 404, 'route' => $this->route ]);
-		}
+		$this->log_response($request,$plugin_info);
+
+		if (is_wp_error($plugin_info)) return $plugin_info;
 
 		return $this->get_redirect_download($request,$plugin_info);
 	}
 
 
 	/**
-	 * rest formatted response
+	 * get plugin information from github repository
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
-	 * @return array|WP_Error
+	 * @return 	array|WP_Error
 	 */
-	public function get_repository($request)
+	private function get_from_repository(\WP_REST_Request $request)
 	{
 		/* get term values for options */
 		$term = get_term_by( 'slug', $this->route['slug'], self::TAXONOMY_NAME);
@@ -566,8 +619,11 @@ trait software_product_github_hosting
 		$this->options 	= array_merge($this->options,get_object_vars($term));
 		$termMeta 		= $this->get_term_meta($term->term_id);
 		foreach ($termMeta as $name => $value) {
-			$this->options[substr($name,7)] = $value;					// e.g. github_repository => repository
+			if (substr($name,0,6) == 'github') {
+				$this->options[substr($name,7)] = $value;				// e.g. github_repository => repository
+			}
 		}
+		unset($term,$termMeta);
 		//$this->options['sections'] 	= ?; 							// section names to include
 		//$this->options['override'] 	= ?;							// override headers
 
@@ -578,36 +634,30 @@ trait software_product_github_hosting
 		}
 
 		/* if environment parameter - ?environment=production, decide source for production/non-production */
-		if ($this->options['source'] == 'any')
+		if ($this->options['source'] == 'either')
 		{
 			if ($param = $request->get_param('environment')) {
 				$this->options['source'] = ($param == 'production') ? 'latest_release' : 'default_branch';
 			}
 		}
 
-		$plugin_name 				= 	$this->options['plugin_slug'];	// plugin_dir/Plugin_Name.php
-		$this->plugin_slug 			= 	dirname($plugin_name);			// plugin_dir
+		$this->plugin_slug 		= dirname($this->options['plugin_slug']);	// plugin name/directory
 		$this->get_working_path($this->plugin_slug);
-		$this->plugin_url 			= 	dirname($this->LOCAL_URL);		// download url
+		$this->plugin_url 		= dirname($this->LOCAL_URL);				// download url
 
 		/* check for cached version of this request */
-		$wp_use_cache = (wp_using_ext_object_cache()) ? $request->get_param('cache') : false;
-		$wp_cache_key = $this->route['slug'] . '|' . $this->route['type'] . '|' . $this->options['source'];
-		if (!$this->isFalse($wp_use_cache) && !$this->isFalse($this->cache_default))
-		{
-			if ($plugin_info = wp_cache_get($wp_cache_key,$this->className)) {
-				return $plugin_info;
-			}
-		} else {
-			wp_cache_delete($wp_cache_key,$this->className);
-		}
+		$wp_cache_key = $this->TRAIT_VERSION . '|' .
+						$this->route['slug'] . '|' .
+						$this->route['type'] . '|' .
+						$this->options['source'];
+		if ($plugin_info = $this->getPluginCache($wp_cache_key)) return $plugin_info;
 
-		/* loads \eacParseReadme static class */
+		/* loads eacParseReadme static class */
 		do_action('eacReadme_load_parser');
 		if (! class_exists('\eacParseReadme'))
 		{
 			return new \WP_Error( 'github_no_parser', 'unable to load the readme.txt parser class, {eac}Readme plugin required.',
-				[	'status'	=> 400	]);
+					[ 'status' => 500 ]);
 		}
 
 		/* get the github repository */
@@ -636,18 +686,54 @@ trait software_product_github_hosting
 		/* process the readme file */
 		$plugin_info 				= $this->getPluginInfo($request);
 
-		/* cache the results */
-		if (!$this->isFalse($wp_use_cache))
+		/* this really shouldn't happen, but... */
+		if (! $plugin_info["download_link"])
 		{
-			$wp_cache_ttl = (defined( 'EAC_GITHUB_CACHE_LIFETIME' ) && is_int( EAC_GITHUB_CACHE_LIFETIME ))
-				? EAC_GITHUB_CACHE_LIFETIME : HOUR_IN_SECONDS;
-			wp_cache_set($wp_cache_key,$plugin_info,$this->className,
-				(is_int($wp_use_cache)) ? $wp_use_cache : $wp_cache_ttl
-			);
+			return new \WP_Error( 'github_not_found', __("requested file not found"),
+					[ 'status' => 404, 'route' => $this->route ]);
 		}
+
+		/* cache the results */
+		$this->putPluginCache($wp_cache_key,$plugin_info);
 
 		/* return the results */
 		return $plugin_info;
+	}
+
+
+	/**
+	 * getPluginCache - get from WP object cache
+	 *
+	 * @param 	string 	cache key
+	 * @return 	array 	plugin_info array
+	 */
+	private function getPluginCache(string $wp_cache_key)
+	{
+		if (! $this->isFalse($this->cache_default))
+		{
+			if ($plugin_info = wp_cache_get($wp_cache_key,$this->className)) {
+				return $plugin_info;
+			}
+		} else {
+			wp_cache_delete($wp_cache_key,$this->className);
+		}
+		return false;
+	}
+
+
+	/**
+	 * putPluginCache - put to WP object cache
+	 *
+	 * @param 	string 	cache key
+	 * @param 	array 	plugin_info array
+	 * @return 	void
+	 */
+	private function putPluginCache(string $wp_cache_key, array $plugin_info)
+	{
+		if (! $this->isFalse($this->cache_default))
+		{
+			wp_cache_set($wp_cache_key,$plugin_info,$this->className,$this->cache_default);
+		}
 	}
 
 
@@ -662,15 +748,16 @@ trait software_product_github_hosting
 		$context = $this->github_stream_context('json');
 
 		/* get the repository */
-		$content 	= sprintf("https://api.github.com/repos/%s",
+		$contentURL = sprintf("https://api.github.com/repos/%s",
 						$this->options['repository']
 					);
 
-		if (! $content = file_get_contents($content,false,$context))
+		if (! $content = @file_get_contents($contentURL,false,$context))
 		{
 			return new \WP_Error( 'github_no_repository', 'unable to access repository '.$this->options['repository'],
 				[	'status'	=> 400,
-					'url'		=> $content,
+					'url'		=> $contentURL,
+					'route' 	=> $this->route,
 					'response'	=> $http_response_header
 				]);
 		}
@@ -690,28 +777,28 @@ trait software_product_github_hosting
 		$context = $this->github_stream_context('json');
 
 		/* get the latest release */
-		if (in_array($this->options['source'],['any','latest_release']))
+		if (in_array($this->options['source'],['either','latest_release']))
 		{
-			$content 	= sprintf("https://api.github.com/repos/%s/releases/latest",
+			$contentURL = sprintf("https://api.github.com/repos/%s/releases/latest",
 							$this->repository['full_name']
 						);
 
-			if ($content = file_get_contents($content,false,$context)) {
+			if ($content = @file_get_contents($contentURL,false,$context)) {
 				$this->options['source'] = 'latest_release';
 				return json_decode($content,true);
 			}
 		}
 
 		/* use the default branch to populate release array */
-		if (in_array($this->options['source'],['any','default_branch']))
+		if (in_array($this->options['source'],['either','default_branch']))
 		{
-			$content 	= sprintf("https://api.github.com/repos/%s/branches/%s",
+			$contentURL = sprintf("https://api.github.com/repos/%s/branches/%s",
 								$this->repository['full_name'],
 								$this->repository['default_branch']
 						);
 
-			if ($content = file_get_contents($content,false,$context)) {
-				$content 	= json_decode($content,true);
+			if ($content = @file_get_contents($contentURL,false,$context)) {
+				$content = json_decode($content,true);
 				$this->options['source'] = 'default_branch';
 				return [
 					'url' 			=> $content['_links']['self'],
@@ -733,7 +820,8 @@ trait software_product_github_hosting
 		/* no release and/or branch */
 		return new \WP_Error( 'github_no_source', 'unable to read '.$this->options['source'].' from repository',
 			[	'status'	=> 400,
-				'url'		=> $content,
+				'url'		=> $contentURL,
+				'route' 	=> $this->route,
 				'response'	=> $http_response_header
 			]);
 	}
@@ -779,9 +867,9 @@ trait software_product_github_hosting
 	 * getPluginInfo - get plugin_info array from readme.txt file
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
-	 * @return array plugin_info array
+	 * @return 	array 	plugin_info array
 	 */
-	private function getPluginInfo($request)
+	private function getPluginInfo(\WP_REST_Request $request)
 	{
 		/* some defaults from the repository/release used if missing from or no readme.txt */
 		$homepage 		= $this->repository['homepage'] 	?? ($this->repository['html_url'] ?? $this->plugin_url);
@@ -828,13 +916,13 @@ trait software_product_github_hosting
 				if (substr($name,0,3) != 'wp-') continue;
 				if ($name == 'wp-sections') { // wp-sections = "description,changelog,..."
 					$sections = array_map('trim',
-						explode("\n", str_replace([',',' '],"\n",strtolower($value)))
+						explode("\n", str_replace([',',' '],"\n",strtolower(esc_attr($value))))
 					);
 					$this->option['sections'] = array_combine($sections, $sections);
 				} else {
-					$name = substr($name,3);
+					$name = esc_attr(substr($name,3));
 					if (!isset($plugin_info[$name]) || empty($plugin_info[$name])) {
-						$plugin_info[$name] = $value;
+						$plugin_info[$name] = esc_attr($value);
 					}
 				}
 			}
@@ -896,7 +984,7 @@ trait software_product_github_hosting
 
 		/* check for a CDN name to use in our download url */
 		$cdnhost = (defined( 'EAC_GITHUB_CDN_HOST' ) && is_string( EAC_GITHUB_CDN_HOST ))
-					? EAC_GITHUB_CDN_HOST : false;
+					? EAC_GITHUB_CDN_HOST : null;
 		/**
 		 * filter {classname}_github_cdn_host to override url cdn host
 		 * @param	string|bool default cdn host
@@ -907,7 +995,7 @@ trait software_product_github_hosting
 		if ($cdnhost)
 		{
 			$plugin_info['download_link'] = str_replace(
-				trailingslashit(dirname($this->github_api_path)),
+				trailingslashit($this->github_api_path),
 				trailingslashit($cdnhost),
 				$plugin_info['download_link']
 			);
@@ -917,18 +1005,10 @@ trait software_product_github_hosting
 		if ($this->route['type'] == 'info')
 		{
 			/* add the plugins api update array to be used by update_plugins_{$hostname} filter */
-			$plugin_info = $this->getPluginInfoUpdate($plugin_info);
+			$plugin_info[$plugin_info['slug']]	= $this->getPluginInfoUpdate($request,$plugin_info);
 
-			/* lastly, add some identifying info */
-			$plugin_info[ basename(str_replace('\\', '/', __TRAIT__)) ]  = [
-				'version'		=> 	$this->TRAIT_VERSION,
-				'host'			=> 	$request->get_header('host'),
-				'repository'	=> 	$this->repository['full_name'],
-				'source'		=> 	$this->options['source'],
-				'tag_name'		=> 	$this->release['tag_name'],
-				'published'		=> 	$this->release['published_at'],
-				'request'		=> 	$this->varServer('request_uri'),
-			];
+			/* lastly, add some identifying & source info */
+			$plugin_info['eac_github_hosting']  = $this->getPluginInfoTrait($request,$plugin_info);
 		}
 
 		/* return results */
@@ -939,8 +1019,8 @@ trait software_product_github_hosting
 	/**
 	 * getPluginInfoSections - get the json file sections
 	 *
-	 * @param $plugin_info
-	 * @return $plugin_info
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	array	$plugin_info
 	 */
 	private function getPluginInfoSections(array $plugin_info): array
 	{
@@ -999,8 +1079,8 @@ trait software_product_github_hosting
 	/**
 	 * getPluginInfoAssets - get the banner & icon images
 	 *
-	 * @param $plugin_info
-	 * @return $plugin_info
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	array 	$plugin_info
 	 */
 	private function getPluginInfoAssets(array $plugin_info): array
 	{
@@ -1016,7 +1096,7 @@ trait software_product_github_hosting
 		/* read the release tree looking for assets folder */
 		$context = $this->github_stream_context('json');
 		$contents = str_replace('{/sha}','/'.$this->release['tag_name'],$this->repository['trees_url']);
-		if (! $contents = file_get_contents($contents,false,$context)) {
+		if (! $contents = @file_get_contents($contents,false,$context)) {
 			return $plugin_info;
 		}
 		$contents = json_decode($contents, true);
@@ -1027,7 +1107,7 @@ trait software_product_github_hosting
 			if (in_array($leaf['path'],array_merge($this->WP_ASSETS[0],$this->WP_ASSETS[1])))
 			{
 				$assetPath = $leaf['path'];
-				if (! $leaf = file_get_contents($leaf['url'],false,$context)) {
+				if (! $leaf = @file_get_contents($leaf['url'],false,$context)) {
 					return $plugin_info;
 				}
 				$leaf = json_decode($leaf, true);
@@ -1054,7 +1134,7 @@ trait software_product_github_hosting
 			{
 				$type = pathinfo($asset['path'], PATHINFO_EXTENSION);
 				if (!in_array($type,$this->IMAGE_TYPES)) continue;
-				if ($contents = file_get_contents($asset['url'],false,$context))
+				if ($contents = @file_get_contents($asset['url'],false,$context))
 				{
 					$contents = json_decode($contents, true);
 					$this->fs->put_contents($this->LOCAL_ASSETS.'/'.$asset['path'], base64_decode($contents['content']),FS_CHMOD_FILE | 0660);
@@ -1115,8 +1195,8 @@ trait software_product_github_hosting
 	/**
 	 * getPluginLocalAssets - get local banner & icon images
 	 *
-	 * @param $plugin_info
-	 * @return $plugin_info
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	array	$plugin_info
 	 */
 	private function getPluginLocalAssets(array $plugin_info): array
 	{
@@ -1152,53 +1232,10 @@ trait software_product_github_hosting
 
 
 	/**
-	 * getPluginInfoUpdate - get plugin api array [wp_update_plugins()] from plugin_info array
-	 *
-	 * @param $plugin_info
-	 * @return $plugin_info
-	 */
-	private function getPluginInfoUpdate(array $plugin_info): array
-	{
-		$plugin = $plugin_info['plugin'];
-		$update = array(
-				'slug'				=> $plugin_info['slug'],
-				'plugin' 			=> $plugin_info['plugin'],
-				'version'			=> $plugin_info['version'],
-				'url'				=> $plugin_info['homepage'],
-				'package'			=> $plugin_info['download_link'],
-				'requires'			=> $plugin_info['requires'],
-				'tested'			=> $plugin_info['tested'],
-				'requires_php'		=> $plugin_info['requires_php'],
-			//	'translations'		=> [],
-		);
-		foreach (['banners','banners_rtl','icons'] as $type)
-		{
-			if (!empty($plugin_info[$type]))
-			{
-				$update[$type] = [
-					'1x' 				=> $plugin_info[$type]['low'],
-					'2x' 				=> $plugin_info[$type]['high'],
-				];
-				if (isset($plugin_info[$type]['svg'])) {
-					$update[$type]['svg'] = $plugin_info[$type]['svg'];
-				}
-			}
-		}
-		if (!empty($plugin_info['section']['upgrade_notice']))
-		{
-			$update['upgrade_notice'] = $plugin_info['section']['upgrade_notice'];
-		}
-
-		$plugin_info[ $plugin ] = $update;
-		return $plugin_info;
-	}
-
-
-	/**
 	 * getPluginInfoDownload - get the zip file to download
 	 *
-	 * @param $plugin_info
-	 * @return $plugin_info
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	array 	$plugin_info
 	 */
 	private function getPluginInfoDownload(array $plugin_info): array
 	{
@@ -1257,7 +1294,7 @@ trait software_product_github_hosting
 		{
 			$download = ($asset) ? $asset['url'] : $plugin_info["download_link"];
 			$context = $this->github_stream_context( $isZipball ? 'none' : 'zip' );
-			if ($download = file_get_contents($download,false,$context))
+			if ($download = @file_get_contents($download,false,$context))
 			{
 				$zipFile = ($isZipball ? $this->TEMP_PATH : $this->LOCAL_PATH).'/'.$downloadName;
 				$this->fs->put_contents($zipFile, $download, FS_CHMOD_FILE | 0660);
@@ -1280,8 +1317,10 @@ trait software_product_github_hosting
 	/**
 	 * getPluginDownloadFile - unzip the zip file and recreate for WordPress
 	 *
-	 * @param $plugin_info
-	 * @return $plugin_info
+	 * @param 	array	$plugin_info plugin info array from getPluginInfo()
+	 * @param 	string	$zipFile the path to the downloaded zip file.
+	 * @param 	string	$downloadName the name to use for the resulting zip file.
+	 * @return 	array 	$plugin_info
 	 */
 	private function getPluginDownloadFile(array $plugin_info, string $zipFile, string $downloadName): array
 	{
@@ -1387,13 +1426,79 @@ trait software_product_github_hosting
 
 
 	/**
+	 * getPluginInfoUpdate - get plugin api array [wp_update_plugins()] from plugin_info array
+	 *
+	 * @param 	object	$request - WP_REST_Request Request object.
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	array
+	 */
+	private function getPluginInfoUpdate(\WP_REST_Request $request, array $plugin_info): array
+	{
+		$update = array(
+				'slug'				=> $plugin_info['slug'],
+				'plugin' 			=> $plugin_info['plugin'],
+				'version'			=> $plugin_info['version'],
+				'url'				=> $plugin_info['homepage'],
+				'package'			=> $plugin_info['download_link'],
+				'requires'			=> $plugin_info['requires'],
+				'tested'			=> $plugin_info['tested'],
+				'requires_php'		=> $plugin_info['requires_php'],
+			//	'translations'		=> [],
+		);
+		foreach (['banners','banners_rtl','icons'] as $type)
+		{
+			if (!empty($plugin_info[$type]))
+			{
+				$update[$type] = [
+					'1x' 			=> $plugin_info[$type]['low'],
+					'2x' 			=> $plugin_info[$type]['high'],
+				];
+				if (isset($plugin_info[$type]['svg'])) {
+					$update[$type]['svg'] = $plugin_info[$type]['svg'];
+				}
+			}
+		}
+		if (!empty($plugin_info['section']['upgrade_notice']))
+		{
+			$update['upgrade_notice'] = $plugin_info['section']['upgrade_notice'];
+		}
+
+		return $update;
+	}
+
+
+	/**
+	 * getPluginInfoTrait - add this trait array
+	 *
+	 * @param 	object	$request - WP_REST_Request Request object.
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	array
+	 */
+	private function getPluginInfoTrait(\WP_REST_Request $request, array $plugin_info): array
+	{
+		return [
+			'version'		=> 	$this->TRAIT_VERSION,
+			'host'			=> 	$request->get_header('host'),
+			'request'		=> 	$this->varServer('request_uri'),
+			'package'		=> 	[
+				'plugin'	=> 	$plugin_info['plugin'],
+				'repository'=> 	$this->repository['full_name'],
+				'source'	=> 	$this->options['source'],
+				'tag_name'	=> 	$this->release['tag_name'],
+				'published'	=> 	$this->release['published_at'],
+			],
+		];
+	}
+
+
+	/**
 	 * get_proxy_download - download the plugin file via proxy read
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
-	 * @param 	array	plugin info array from get_repository()
-	 * @return void
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	void
 	 */
-	public function get_proxy_download($request,$plugin_info)
+	public function get_proxy_download(\WP_REST_Request $request, $plugin_info)
 	{
 		nocache_headers();
 		$basename	= basename($plugin_info["download_link"]);
@@ -1401,7 +1506,7 @@ trait software_product_github_hosting
 		header("Content-Disposition: attachment; filename=$basename");
 		header("Content-Type: application/zip");
 		$context 	= $this->github_stream_context('zip');
-		//	$data 		= file_get_contents($plugin_info["download_link"],false,$context);
+		//	$data 		= @file_get_contents($plugin_info["download_link"],false,$context);
 		//	$filesize 	= strlen($data);
 		//	header("Content-Length: $filesize");
 		//	echo $data;
@@ -1414,19 +1519,66 @@ trait software_product_github_hosting
 	 * get_redirect_download - download the plugin file via redirect
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
-	 * @param 	array	plugin info array from get_repository()
-	 * @return void
+	 * @param 	array	plugin info array from getPluginInfo()
+	 * @return 	void
 	 */
-	public function get_redirect_download($request,$plugin_info)
+	public function get_redirect_download(\WP_REST_Request $request, $plugin_info)
 	{
-		return rest_ensure_response(new \WP_REST_Response(null,302,
+		return new \WP_REST_Response(null,302,
 			array_merge(
 				wp_get_nocache_headers(),
 				['Location' => $plugin_info['download_link']]
 			)
-		));
+		);
 	//	nocache_headers
 	//	wp_redirect($plugin_info['download_link']);
 	//	die();
+	}
+
+
+	/**
+	 * log response
+	 *
+	 * @param 	object	$request - WP_REST_Request Request object.
+	 * @param 	array	plugin info array or wp_error
+	 * @return 	array	$plugin_info
+	 */
+	public function log_response(\WP_REST_Request $request, $plugin_info)
+	{
+		if (!defined('EAC_GITHUB_API_LOG') || !is_string(EAC_GITHUB_API_LOG)) {
+			return $plugin_info;
+		}
+
+		$logfile_path = trailingslashit($this->varServer('document_root')).trim(EAC_GITHUB_API_LOG,'/');
+
+		$logfile = new \stdClass();
+		if ($this->fs->exists($logfile_path)) {
+			if ($logfile = $this->fs->get_contents($logfile_path)) {
+				$logfile = json_decode($logfile);
+			}
+		}
+		$result['request'] = [
+			'time'				=> 	wp_date('c'),
+			'request'			=> 	$this->varServer('request_uri'),
+			'route'				=> 	[$this->route['type'] => $request->get_route()],
+			'remote_addr'		=> 	$this->varServer('remote_addr'),
+			'user_agent'		=> 	$request->get_header('user_agent'),
+		];
+		if (is_wp_error($plugin_info)) {
+			$result['error'] = [
+				'code'			=>	$plugin_info->get_error_code(),
+				'message'		=>	$plugin_info->get_error_message(),
+				'data'			=>	$plugin_info->get_error_data(),
+			];
+		} else {
+			$default = $plugin_info['eac_github_hosting'];
+			$result['response'] = $default['package'];
+		}
+
+		$datestr = '_'.time();
+		$logfile->{$datestr} = $result;
+		$this->fs->put_contents($logfile_path,json_encode($logfile,JSON_PRETTY_PRINT));
+
+		return $plugin_info;
 	}
 }

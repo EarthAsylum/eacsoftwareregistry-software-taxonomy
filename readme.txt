@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.1
-Last Updated:       23-Feb-2024
+Stable tag:         2.0.2
+Last Updated:       25-Feb-2024
 Requires at least:  5.5.0
 Tested up to:       6.4
 Requires PHP:       7.4
@@ -19,7 +19,7 @@ Software Product Taxonomy - Customize {eac}SoftwareRegistry with options, licens
 
 **{eac}SoftwareRegistry Software Taxonomy** is an extension plugin to [{eac}SoftwareRegistry Software Registration Server](https://swregistry.earthasylum.com/software-registration-server/).
 
-Now with plugin hosting on Github to provide complete, automated plugin updates in WordPress.
+Now with plugin hosting on Github to provide complete, automated plugin information and updates in WordPress.
 
 **{eac}SoftwareRegistry Software Taxonomy** is a simple plugin extension that allows you to set and override {eac}SoftwareRegistry options for specific software products. It both defines the software product as well as the server parameters used when that product is registered via the software registration application program interface.
 
@@ -166,6 +166,15 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.2 – February 25, 2024 =
+
++   Use plugin name (plugin), rather than slug (plugin/plugin.php) in JSON.
++   Some restructuring of code.
++   Set main plugin version correctly.
++   Allow full name source (latest_release|default_branch) as well as abbreviated (release|branch).
++   Changed source 'any' to 'either'.
++   Change user-agent in github api.
 
 = Version 2.0.1 – February 23, 2024 =
 

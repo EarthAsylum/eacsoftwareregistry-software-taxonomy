@@ -1,7 +1,7 @@
 # {eac}SoftwareRegistry Software Taxonomy - Github Hosting  
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Last Updated:       22-Feb-2024  
+Last Updated:       24-Feb-2024  
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
 
@@ -49,13 +49,13 @@ Additionally, any image assets in one of the aforementioned folders are download
 +   `/branch/{pluginname}.proxy` or `/release/{pluginname}.proxy`
     +   A 'proxy' request to download the default branch or latest release .zip file.
     +   Used specifically by WordPress updater to download the proper installer.
-    +   This url is included in the 'info' request, 'download_link' field.
+    +   This url is included in the JSON response 'download_link' and 'package' fields.
 +   `/plugin_info.json`
     +   An 'info' request that returns a JSON object for all available plugins.
     +   Specifically intended for the WordPress `update_plugins_{$hostname}` filter available since version 5.8.
     +   May be used as your 'Update URI' for all of your plugins but does not provide plugin information (View Details).
 
-\* Note: if URIs ending with a '.' extension (i.e. /{pluginname}.json) are not passed through WordPress, you may use the alternate '-' or '+' URI (/{pluginname}-json or /{pluginname}+json).
+\* Note: you may use the alternate '-' or '+' URI (/{pluginname}-json or /{pluginname}+json).
 
 #### Image asset names
 
@@ -73,13 +73,23 @@ Additionally, any image assets in one of the aforementioned folders are download
 #### Optional Constants (defined in wp-config.php file)
 
 +   `define('EAC_GITHUB_HOSTING_DIR','/path/to/folder')`
-    +   Overrides the default ('wp-content/uploads') local folder.
-    +   Recommended: `define( 'EAC_GITHUB_HOSTING_DIR', '/software-updates' );`
+    +   Overrides the default ('/wp-content/uploads') local folder.
 +   `define('EAC_GITHUB_API_SHORTCUT','shortcut')`
     +   Overrides the default ('/wp-json/softwareregistry/v1') api route for shortened urls.
-    +   Recommended: `define( 'EAC_GITHUB_API_SHORTCUT', '/software-updates' );`
++   `define('EAC_GITHUB_API_LOG','/relative/path/to/log.json');`
+    +   Enables and names the log file (in JSON format).
 +   `define('EAC_GITHUB_CDN_HOST','https://cdn_host/path/')`
     +   To use a CDN, replaces the default ('/wp-json/softwareregistry/v1') or shortcut url with this CDN url.
+
+__Recommended__:
+
+	define( 'EAC_GITHUB_HOSTING_DIR', '/software-updates' );
+	define( 'EAC_GITHUB_API_SHORTCUT', EAC_GITHUB_HOSTING_DIR );
+
+Optional:
+
+	define( 'EAC_GITHUB_API_LOG', EAC_GITHUB_HOSTING_DIR.'/github_api_log.'.date('Y-m').'.json');
+
 
 #### Filters & Actions
 
@@ -133,27 +143,27 @@ Here's a simple (incomplete) example remote call to retrieve and cache the json 
     );
     if (!empty($remote['body])) {
         $result = json_decode( $remote['body'], true );
-        \set_site_transient('my_plugin_update_transient', $result, 12 * HOUR_IN_SECONDS);
+        \set_site_transient('my_plugin_update_transient', $result, HOUR_IN_SECONDS);
     }
 
-When using the `plugins_api` filter, return the full array:
+When using the `plugins_api` filter, return the full array as an object:
 
-    return $result.
+    return (object) $result.
 
-When using the `site_transient_update_plugins` or `update_plugins_{$hostname}` filter, return the plugin array:
+When using the `site_transient_update_plugins` or `update_plugins_{$hostname}` filter, return the plugin array as an object:
 
-    return $result['my_plugin/my_plugin.php'];
+    return (object) $result[ $result['slug'] ];
 
 In addition:
 
 1. If your plugin is registered via {eac}SoftwareRegistry, you may add an authentication header including the registration key which will then be verified as valid and active before updating:
 
-        'headers'   => ['Accept' => 'application/json',
+		headers   => ['Accept' => 'application/json',
                     'Authentication' => 'token '.base64_encode($this->getRegistrationKey()) ],
 
 2. You may pass a `environment` argument in the URL with the WordPress environment:
 
-        $update_uri = add_query_arg(['environment'=>wp_get_environment_type()],update_uri);
+		$update_uri = add_query_arg(['environment'=>wp_get_environment_type()],update_uri);
 
 Using this along with setting your Github source to 'Either (Latest or Default)' will allow updates from the default branch for non-production systems and from the latest release for production systems.
 
