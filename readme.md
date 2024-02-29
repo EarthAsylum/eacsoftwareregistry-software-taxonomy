@@ -1,9 +1,9 @@
-# {eac}SoftwareRegistry Software Taxonomy  
+## {eac}SoftwareRegistry Software Taxonomy  
 [![EarthAsylum Consulting](https://img.shields.io/badge/EarthAsylum-Consulting-0?&labelColor=6e9882&color=707070)](https://earthasylum.com/)
 [![WordPress](https://img.shields.io/badge/WordPress-Plugins-grey?logo=wordpress&labelColor=blue)](https://wordpress.org/plugins/search/EarthAsylum/)
-[![eacDoojigger](https://img.shields.io/badge/Requires-{eac}Doojigger-da821d)](https://eacDoojigger.earthasylum.com/)
+[![eacDoojigger](https://img.shields.io/badge/Requires-%7Beac%7DDoojigger-da821d)](https://eacDoojigger.earthasylum.com/)
 
-<details><summary>Plugin Header</summary><samp>
+<details><summary>Plugin Header</summary>
 
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
@@ -18,11 +18,12 @@ License URI:        https://www.gnu.org/licenses/gpl.html
 Tags:               software registration, software registry, software license, software product, github hosting, {eac}SoftwareRegistry  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
 Github URI:         https://github.com/EarthAsylum/eacsoftwareregistry-software-taxonomy  
-</samp></details>
 
-**_Software Product Taxonomy - Customize {eac}SoftwareRegistry with options, licensing, client messaging, and Github hosting for each software product._**
+</details>
 
-## Description
+> Software Product Taxonomy - Customize {eac}SoftwareRegistry with options, licensing, client messaging, and Github hosting for each software product.
+
+### Description
 
 **{eac}SoftwareRegistry Software Taxonomy** is an extension plugin to [{eac}SoftwareRegistry Software Registration Server](https://swregistry.earthasylum.com/software-registration-server/).
 
@@ -94,7 +95,7 @@ New in version 2.0, these options allow for the "self-hosting" of WordPress plug
 More details may be found in the included `readme_github.md` file.
 
 
-## Installation
+### Installation
 
 **{eac}SoftwareRegistry Software Taxonomy** is an extension plugin to and requires installation and registration of [{eac}SoftwareRegistry](https://swregistry.earthasylum.com/).
 
@@ -121,7 +122,7 @@ See [Managing Plugins -> Manual Plugin Installation](https://wordpress.org/suppo
 Taxonomy settings available from this extension will be seen in the *Software Registry → Software Products* menu.
 
 
-## Screenshots
+### Screenshots
 
 1. Software Registry → Software Products
 ![{eac}SoftwareRegistry Software Taxonomy](https://ps.w.org/eacsoftwareregistry-software-taxonomy/assets/screenshot-1.png)
@@ -142,7 +143,7 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 ![{eac}SoftwareRegistry Software Product](https://ps.w.org/eacsoftwareregistry-software-taxonomy/assets/screenshot-6.png)
 
 
-## Other Notes
+### Other Notes
 
 #### See Also
 
@@ -151,7 +152,7 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 +   [Implementing the Software Registry SDK](https://swregistry.earthasylum.com/software-registry-sdk/)
 
 
-## Upgrade Notice
+### Upgrade Notice
 
 Requires {eac}SoftwareRegistry version 1.3.2+
 

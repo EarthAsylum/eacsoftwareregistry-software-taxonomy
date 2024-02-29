@@ -5,7 +5,7 @@ Last Updated:       24-Feb-2024
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
 
-**_Software Product Taxonomy - Github Hosting provides "self-hosting" and automatic updates of your WordPress plugins on Github._**
+> Software Product Taxonomy - Github Hosting provides "self-hosting" and automatic updates of your WordPress plugins on Github.
 
 ## Description
 
