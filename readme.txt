@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.2
-Last Updated:       25-Feb-2024
+Stable tag:         2.0.3
+Last Updated:       29-Feb-2024
 Requires at least:  5.5.0
 Tested up to:       6.4
 Requires PHP:       7.4
@@ -166,6 +166,10 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.3 – February 29, 2024 =
+
++   Fixed error getting .distignore file from zip archive.
 
 = Version 2.0.2 – February 25, 2024 =
 

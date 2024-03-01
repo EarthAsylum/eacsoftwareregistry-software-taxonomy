@@ -1327,8 +1327,18 @@ trait software_product_github_hosting
 
 		/* unzip and remove files/folders from zipball */
 		$zipballPath = $this->TEMP_PATH."/temp_".$this->plugin_slug.'_zipball';
+		$distignore = '.distignore';
 		$zip = new \ZipArchive;
 		if ($zip->open($zipFile)) {
+			// looking for {owner}-{repo}-{sha}/.distignore",
+			$files = $zip->count();
+			for ($i=0; $i < $files; $i++) {
+				$parts = explode(DIRECTORY_SEPARATOR, $zip->getNameIndex($i));
+				if (count($parts) == 2 && $parts[1] == '.distignore') {
+					$distignore = $zip->getNameIndex($i);
+					break;
+				}
+			}
 			$zip->extractTo($zipballPath);
 			$zip->close();
 		} else {
@@ -1337,12 +1347,13 @@ trait software_product_github_hosting
 		$this->fs->delete($zipFile);
 
 		/* get ignored files (match with regex) */
-		if (is_file($zipballPath.'/.distignore')) {
-			$distignore 	= file($zipballPath.'/.distignore',FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
+		$distignore = $zipballPath.'/'.$distignore;
+		if (file_exists($distignore)) {
+			$distignore 	= file($distignore,FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
 		} else {
 			$distignore 	= array_map(function($v){return '/'.preg_quote($v);},$this->WP_ASSETS[0]);
-			$distignore[] 	= '/\\.+';
 		}
+		$distignore[] 		= '/\\.+';
 		$distignore = array_filter(array_map(function($ignore) {
 			$ignore = ltrim($ignore,' \t');
 			if (empty($ignore) || $ignore[0] == '#') {
