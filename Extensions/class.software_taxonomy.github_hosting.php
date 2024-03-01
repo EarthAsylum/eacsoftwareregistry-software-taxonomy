@@ -880,12 +880,18 @@ trait software_product_github_hosting
 		if ($author 	= $this->repository['organization'] ?? ($this->repository['owner'] ?? null)) {
 			$author 	=  "<a href='".$author['html_url']."'>".$author['login']."</a>";
 		}
-		$contributors 	= isset($this->release['author'])
-							? [$this->release['author']['login'] => [
+		$contributors 	= array_merge(
+							[$this->repository['owner']['login'] => [
+								'display_name' 	=> $this->repository['owner']['login'],
+								'profile' 		=> $this->repository['owner']['html_url'],
+								'avatar' 		=> $this->repository['owner']['avatar_url']]
+							],
+							[$this->release['author']['login'] => [
 								'display_name' 	=> $this->release['author']['login'],
 								'profile' 		=> $this->release['author']['html_url'],
 								'avatar' 		=> $this->release['author']['avatar_url']]
-							] : null;
+							]
+		);
 		$changelog 		= $this->release['body'] 			?? null;
 
 		/* get values from readme.txt */
