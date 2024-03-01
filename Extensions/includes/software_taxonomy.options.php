@@ -9,7 +9,7 @@
  * @version		1.x
  *
  * included for register_options() method
- * @version 24.0217.1
+ * @version 24.0301.1
  */
 
 defined( 'ABSPATH' ) or exit;
@@ -180,6 +180,7 @@ $this->term_option_fields =
 			'github_token'			=> array(
 						'type'		=> 	'password',
 						'label'		=> 	'GitHub Access Token',
+						'default'	=> 	defined('GITHUB_ACCESS_TOKEN') ? GITHUB_ACCESS_TOKEN : '',
 						'info'		=>	'Increases the github rate limit and is required for private repositories.',
 						'help'		=>	"[info]<br>This value is encrypted when stored.",
 						'attributes'=> 	['autocomplete'=>'new-password'],
