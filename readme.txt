@@ -171,6 +171,7 @@ You should receive a copy of the GNU General Public License along with this prog
 
 +   Fixed error getting .distignore file from zip archive.
 +   Include owner in default contributors.
++   Use GITHUB_ACCESS_TOKEN if defined.
 
 = Version 2.0.2 – February 25, 2024 =
 
