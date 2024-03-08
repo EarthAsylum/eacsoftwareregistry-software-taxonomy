@@ -160,14 +160,20 @@ $this->term_option_fields =
 			'github_source'			=> array(
 						'type'		=>	'select',
 						'label'		=>	'Repository Source',
-						'options'	=>	[	'Latest Release'			=> 'latest_release',
-											'Default Branch (aka main)'	=> 'default_branch',
-											'Either (latest or default)' => 'either' ],
-						'default'	=>	'latest_release',
+						'options'	=>	[	'Release (latest)'				=> 'release',
+											'Branch (default)'				=> 'branch',
+											'Either (release or branch)' 	=> 'either' ],
+						'default'	=>	'release',
 						'info'		=>	"Select which source to use from the repository.",
 						'help'		=>	"[info]<br>Use the release feature in GitHub to control when your plugin is available for production use. ".
 										"If your WordPress updater passes an 'environment' value in the update uri and this fields is set to 'either', ".
-										"the 'latest_release' will be used for 'production' environments while 'default_branch' will be used for all others."
+										"the latest release will be used for 'production' environments while the default branch will be used for all others."
+			),
+			'github_sourceId'		=> array(
+						'type'		=> 	'text',
+						'label'		=> 	'Tag Name',
+						'info'		=>	'(Optional) Specific release or branch tag name (or id). '.
+										'<br>When blank, use latest release or default branch.',
 			),
 			'github_readme'			=> array(
 						'type'		=>	'text',

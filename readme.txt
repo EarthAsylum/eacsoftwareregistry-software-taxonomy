@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.3
-Last Updated:       1-Mar-2024
+Stable tag:         2.0.4
+Last Updated:       08-Mar-2024
 Requires at least:  5.5.0
 Tested up to:       6.4
 Requires PHP:       7.4
@@ -19,7 +19,7 @@ Software Product Taxonomy - Customize {eac}SoftwareRegistry with options, licens
 
 **{eac}SoftwareRegistry Software Taxonomy** is an extension plugin to [{eac}SoftwareRegistry Software Registration Server](https://swregistry.earthasylum.com/software-registration-server/).
 
-Now with plugin hosting on Github to provide complete, automated plugin information and updates in WordPress.
+Now with [plugin hosting on Github](https://swregistry.earthasylum.com/github-hosting/) to provide complete, automated plugin information and updates in WordPress.
 
 **{eac}SoftwareRegistry Software Taxonomy** is a simple plugin extension that allows you to set and override {eac}SoftwareRegistry options for specific software products. It both defines the software product as well as the server parameters used when that product is registered via the software registration application program interface.
 
@@ -55,7 +55,8 @@ When an API request is received by the registry server, the `registry_product` i
 +   _GitHub Hosting_
     +   _WordPress Plugin Slug_     - The {directory}/{plugin.php} slug of the WordPress plugin.
     +   _GitHub Repository_         - The {owner}/{repository} id of the github repository.
-    +   _Repository Source_         - Select which source to use from the repository (default, latest release).
+    +   _Repository Source_         - Select which source to use from the repository (branch, release).
+    +   _Tag Name_                  - (Optional) Specific release or branch tag name (or id).
     +   _Path to readme.txt_        - Pathname within the repository to the readme.txt file.
 If blank, the json file will be generated from information available in the GitHub repository.
     +   _GitHub Access Token_       - Your GitHub personal access token, Increases the github rate limit and is required for private repositories.
@@ -84,7 +85,7 @@ Wether you're using software registration or not, you can use Github Hosting to 
 
 New in version 2.0, these options allow for the "self-hosting" of WordPress plugins on GitHub in a way similar to and meeting the requirements of the [WordPress plugin repository](https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy/).
 
-More details may be found in the included `readme_github.md` file.
+More details may be found in the included [readme_github.md](https://swregistry.earthasylum.com/github-hosting/) file.
 
 
 == Installation ==
@@ -166,6 +167,13 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.4 – March 8, 2024 =
+
++   Changed selection values from 'latest_release' or 'default_branch' to 'release' or 'branch'.
++   Allow specifying release id (or tag) or branch name.
+    +   defaults to 'latest' release or 'default' branch.
++   Specific url: `/{release|branch}/{plugin_name}.json?id={tag|id}` overrides set options.
 
 = Version 2.0.3 – March 1, 2024 =
 

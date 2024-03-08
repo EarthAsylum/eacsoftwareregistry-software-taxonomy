@@ -1,13 +1,14 @@
-# {eac}SoftwareRegistry Software Taxonomy - Github Hosting  
+## {eac}SoftwareRegistry Software Taxonomy - Github Hosting  
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Last Updated:       24-Feb-2024  
+Last Updated:       08-Mar-2024  
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
+Github URI:         https://github.com/EarthAsylum/eacsoftwareregistry-software-taxonomy  
 
 > Software Product Taxonomy - Github Hosting provides "self-hosting" and automatic updates of your WordPress plugins on Github.
 
-## Description
+### Description
 
 >   \* GitHub hosting requires installation of the [{eac}Readme plugin](https://wordpress.org/plugins/eacreadme/) in order to process readme.txt files.
 
@@ -22,7 +23,7 @@ Like a WordPress plugin, your *self-hosted* plugin should have a well-formed rea
 #### Recommendations
 
 +   Use GitHub releases to control what and when a version is ready for production.
-    +   Ability too install the latest release on production systems or the default branch on non-production.
+    +   Ability to install the latest release on production systems or the default branch on non-production.
 +   Tag your release with a version number (using semantic versioning: M.m.p).
     +   Tags are used in zip file names.
 +   Include a description (change log) with your release.
@@ -126,7 +127,7 @@ If not, you will need to include code within your plugin using the following fil
     +   See [support the auto-updates UI](https://make.wordpress.org/core/2020/07/30/recommended-usage-of-the-updates-api-to-support-the-auto-updates-ui-for-plugins-and-themes-in-wordpress-5-5/)
     +   For WordPress versions prior to 5.8, use this filter to provide the updater object.
 +   `update_plugins_{$hostname}`
-    +   See [update_plugins_{$hostname}](https://developer.wordpress.org/reference/hooks/update_plugins_hostname/)
+    +   See [update plugins {$hostname}](https://developer.wordpress.org/reference/hooks/update_plugins_hostname/)
     +   For WordPress versions 5.8 or greater, use this filter to provide the updater object.
 
 Within these filters, you should cache results (using transients) as the filters may be triggered quite frequently.
@@ -165,11 +166,27 @@ In addition:
 
 		$update_uri = add_query_arg(['environment'=>wp_get_environment_type()],update_uri);
 
-Using this along with setting your Github source to 'Either (Latest or Default)' will allow updates from the default branch for non-production systems and from the latest release for production systems.
+Using this along with setting your Github source to 'Either' will allow updates from the default branch for non-production systems and from the latest release for production systems.
 
+### JSON Example
 
-## Screenshots
+#### To see a live JSON updater file for this plugin...
+
+This file provides all of the information WordPress needs to display detailed plugin information from the 'View version x.x.x details' link on the Plugins page.
+
+It also has a `eacsoftwareregistry-software-taxonomy` object that provides the needed data for WordPress to automatically update the plugin from the 'update now' link.
+
+![Automatic Plugin Update](https://ps.w.org/eacsoftwareregistry-software-taxonomy/assets/plugin_update.png)
+
+This plugin is [available here on Github](https://github.com/EarthAsylum/eacsoftwareregistry-software-taxonomy) and the information is taken from the readme.txt file...
+
+>   [/software-updates/eacsoftwareregistry-software-taxonomy.json](https://swregistry.earthasylum.com/software-updates/eacsoftwareregistry-software-taxonomy.json)
+
+### Screenshots
 
 6. Software Registry → Software Products → {product} → Github Hosting
 ![{eac}SoftwareRegistry Software Product](https://ps.w.org/eacsoftwareregistry-software-taxonomy/assets/screenshot-6.png)
+
+7. WordPress → Plugins → Update Plugin
+![Automatic Plugin Update](https://ps.w.org/eacsoftwareregistry-software-taxonomy/assets/plugin_update.png)
 

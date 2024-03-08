@@ -16,7 +16,7 @@ trait software_product_github_hosting
 	/**
 	 * @var string trait version
 	 */
-	private $TRAIT_VERSION 		= '24.0225.1';
+	private $TRAIT_VERSION 		= '24.0308.1';
 
 	/**
 	 * @var string local folder
@@ -64,7 +64,8 @@ trait software_product_github_hosting
 		'repository' 			=> '',					// Github {owner}/{repo}
 		'token'					=> '',					// personal access token
 		'readme'				=> '/readme.txt',		// path within repository to readme.txt
-		'source'				=> 'either',			// 'latest_release' | 'default_branch' | 'any'
+		'source'				=> 'either',			// 'latest_release' | 'default_branch' | 'either'
+		'sourceId'				=> '',					// release or branch id/tag
 		// not from term, may be set from repository custom property (wp-sections)
 		'sections' 				=> [
 			'description'				=>	'description',
@@ -380,7 +381,8 @@ trait software_product_github_hosting
 		$this->route = [
 			'slug' 		=> sanitize_text_field($request->get_param('route_slug')), 		// plugin name
 			'type' 		=> sanitize_text_field($request->get_param('route_type')),		// info|proxy|download
-			'source'	=> sanitize_text_field($request->get_param('route_source')),	// branch|release
+			'source'	=> trim(sanitize_text_field($request->get_param('route_source')),'/'),	// branch|release
+			'sourceId'	=> sanitize_text_field($request->get_param('id')),				// branch name|release id
 			'delim' 	=> sanitize_text_field($request->get_param('route_delim')),		// .|-|+
 		];
 
@@ -394,28 +396,15 @@ trait software_product_github_hosting
 		}
 
 		/* validate source */
-		if ($this->route['source'])
+		if (! in_array($this->route['source'],['','branch','release','either','default_branch','latest_release']) )
 		{
-			switch (trim($this->route['source'],'/')) {
-				case 'branch':
-				case 'default_branch':
-					$this->route['source'] = 'default_branch';
-					break;
-				case 'release':
-				case 'latest_release':
-					$this->route['source'] = 'latest_release';
-					break;
-				case 'any':
-				case 'either':
-					$this->route['source'] = 'either';
-					break;
-				default:
-					return $this->log_response($request,
-						new \WP_Error( 'github_invalid_source', __("invalid route source requested"),
-							[ 'status' => 400, 'route' => $this->route ])
-					);
-			}
+			return $this->log_response($request,
+				new \WP_Error( 'github_invalid_source', __("invalid route source requested"),
+					[ 'status' => 400, 'route' => $this->route ])
+			);
 		}
+
+		/* sourceId may be 'latest', 'default', or release id, or branch name
 
 		/* check for / validate registration/authorization */
 		if ($registration = $request->get_header('Authorization'))
@@ -627,29 +616,18 @@ trait software_product_github_hosting
 		//$this->options['sections'] 	= ?; 							// section names to include
 		//$this->options['override'] 	= ?;							// override headers
 
-		/* source from route override */
-		if ($this->route['source'])
-		{
-			$this->options['source'] = $this->route['source'];
-		}
-
-		/* if environment parameter - ?environment=production, decide source for production/non-production */
-		if ($this->options['source'] == 'either')
-		{
-			if ($param = $request->get_param('environment')) {
-				$this->options['source'] = ($param == 'production') ? 'latest_release' : 'default_branch';
-			}
-		}
+		$this->getPluginSource($request);
 
 		$this->plugin_slug 		= dirname($this->options['plugin_slug']);	// plugin name/directory
 		$this->get_working_path($this->plugin_slug);
 		$this->plugin_url 		= dirname($this->LOCAL_URL);				// download url
 
 		/* check for cached version of this request */
-		$wp_cache_key = $this->TRAIT_VERSION . '|' .
-						$this->route['slug'] . '|' .
-						$this->route['type'] . '|' .
-						$this->options['source'];
+		$wp_cache_key = $this->TRAIT_VERSION 	. '|' .
+						$this->route['slug'] 	. '|' .
+						$this->route['type'] 	. '|' .
+						$this->route['source']	. '|' .
+						$this->route['sourceId'];
 		if ($plugin_info = $this->getPluginCache($wp_cache_key)) return $plugin_info;
 
 		/* loads eacParseReadme static class */
@@ -738,6 +716,50 @@ trait software_product_github_hosting
 
 
 	/**
+	 * getPluginSource - get the source (release|branch) and id
+	 *
+	 * @param 	object	$request - WP_REST_Request Request object.
+	 */
+	private function getPluginSource($request)
+	{
+		/* source from route override */
+		if ($this->route['source'])
+		{
+			$this->options['source'] = $this->route['source'];
+		}
+		switch ($this->options['source'])
+		{
+			case 'default_branch':
+				$this->options['source'] 	= 'branch';
+				break;
+			case 'latest_release':
+				$this->options['source']	= 'release';
+				break;
+			case 'any':
+			case 'either':
+				$this->options['source'] 	= 'either';
+				/* if environment parameter - ?environment=production,
+				   decide source for production/non-production */
+				if ($param = $request->get_param('environment')) {
+					$this->options['source'] = ($param != 'production') ? 'branch' : 'release';
+				}
+				break;
+		}
+		/* source id = branch name | release id */
+		if ($this->route['sourceId'])
+		{
+			$this->options['sourceId'] = $this->route['sourceId'];
+		}
+		if (empty($this->options['sourceId']))
+		{
+			$this->options['sourceId'] = ($this->options['source'] == 'branch') ? 'default' : 'latest';
+		}
+		$this->route['source'] 		= $this->options['source'];
+		$this->route['sourceId'] 	= $this->options['sourceId'];
+	}
+
+
+	/**
 	 * getPluginRepository - get github repository
 	 *
 	 * @return array|WP_Error github repository array
@@ -777,48 +799,60 @@ trait software_product_github_hosting
 		$context = $this->github_stream_context('json');
 
 		/* get the latest release */
-		if (in_array($this->options['source'],['either','latest_release']))
+		if (in_array($this->options['source'],['either','release']))
 		{
-			$contentURL = sprintf("https://api.github.com/repos/%s/releases/latest",
-							$this->repository['full_name']
-						);
+			if (in_array($this->options['sourceId'],['','default'])) {
+				$this->options['sourceId'] = 'latest';
+			}
+			$contentURL = sprintf("https://api.github.com/repos/%s/releases/%s",
+				$this->repository['full_name'],
+				(is_numeric($this->options['sourceId']) || $this->options['sourceId'] == 'latest')
+					? $this->options['sourceId'] 			// 'latest' | release id
+					: 'tags/'.$this->options['sourceId'] 	// | tag name
+			);
 
 			if ($content = @file_get_contents($contentURL,false,$context)) {
-				$this->options['source'] = 'latest_release';
-				return json_decode($content,true);
+				$content = json_decode($content,true);
+				$this->options['source'] 	= 'release';
+				$this->options['sourceId'] 	= $content['id'];
+				return $content;
 			}
 		}
 
 		/* use the default branch to populate release array */
-		if (in_array($this->options['source'],['either','default_branch']))
+		if (in_array($this->options['source'],['either','branch']))
 		{
+			if (in_array($this->options['sourceId'],['','default','latest'])) {
+				$this->options['sourceId'] = $this->repository['default_branch'];
+			}
 			$contentURL = sprintf("https://api.github.com/repos/%s/branches/%s",
-								$this->repository['full_name'],
-								$this->repository['default_branch']
-						);
+				$this->repository['full_name'],
+				$this->options['sourceId'] // $this->repository['default_branch']
+			);
 
 			if ($content = @file_get_contents($contentURL,false,$context)) {
 				$content = json_decode($content,true);
-				$this->options['source'] = 'default_branch';
+				$this->options['source'] 	= 'branch';
+				$this->options['sourceId'] 	= $content['name'];
 				return [
 					'url' 			=> $content['_links']['self'],
 					'html_url'		=> $content['_links']['html'],
 					'author'		=> $content['commit']['author'],
-					'tag_name' 		=> $this->repository['default_branch'], // 'main' or 'master'
+					'tag_name' 		=> $content['name'], //$this->repository['default_branch'], // 'main' or 'master'
 					'created_at' 	=> $this->repository['created_at'],
 					'updated_at' 	=> $this->repository['updated_at'],
 				//	'published_at' 	=> max($this->repository['pushed_at'],$this->repository['updated_at']),
 					'published_at' 	=> $content['commit']['commit']['committer']['date'],
 					'zipball_url'	=> sprintf("https://api.github.com/repos/%s/zipball/%s",
 										$this->repository['full_name'],
-										$this->repository['default_branch']
+										$content['name'] //$this->repository['default_branch']
 									),
 				];
 			}
 		}
 
 		/* no release and/or branch */
-		return new \WP_Error( 'github_no_source', 'unable to read '.$this->options['source'].' from repository',
+		return new \WP_Error( 'github_no_source', 'unable to read '.$this->options['source'].':'.$this->options['sourceId'].' from repository',
 			[	'status'	=> 400,
 				'url'		=> $contentURL,
 				'route' 	=> $this->route,
@@ -968,9 +1002,13 @@ trait software_product_github_hosting
 			$plugin_info = $this->getPluginInfoAssets($plugin_info);
 
 			/* force download link through api proxy */
-			$source = ($this->options['source'] == 'default_branch') ? 'branch' : 'release';
+			//$source = ($this->options['source'] == 'default_branch') ? 'branch' : 'release';
 			$this->options['override']['download_link'] =
-				$this->github_api_path.$source.'/'.$this->route['slug'].$this->route['delim'].'proxy';
+					$this->github_api_path.
+					$this->options['source'].'/'.
+					$this->route['slug'].
+					$this->route['delim'].
+					'proxy?id='.$this->options['sourceId'];
 		}
 
 		/* get download zip file */
@@ -1500,7 +1538,7 @@ trait software_product_github_hosting
 			'package'		=> 	[
 				'plugin'	=> 	$plugin_info['plugin'],
 				'repository'=> 	$this->repository['full_name'],
-				'source'	=> 	$this->options['source'],
+				'source'	=> 	$this->options['source'].'/'.$this->options['sourceId'],
 				'tag_name'	=> 	$this->release['tag_name'],
 				'published'	=> 	$this->release['published_at'],
 			],
