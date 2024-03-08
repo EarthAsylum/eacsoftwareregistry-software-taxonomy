@@ -170,10 +170,11 @@ You should receive a copy of the GNU General Public License along with this prog
 
 = Version 2.0.4 – March 8, 2024 =
 
++   Changed route argument names from 'route_*' to 'update_*'.
 +   Changed selection values from 'latest_release' or 'default_branch' to 'release' or 'branch'.
 +   Allow specifying release id (or tag) or branch name.
     +   defaults to 'latest' release or 'default' branch.
-+   Specific url: `/{release|branch}/{plugin_name}.json?id={tag|id}` overrides set options.
++   Specific url: `/{release|branch}/{plugin_name}.json?update_id={tag|id}` overrides set options.
 
 = Version 2.0.3 – March 1, 2024 =
 

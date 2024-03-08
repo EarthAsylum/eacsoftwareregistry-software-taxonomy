@@ -326,13 +326,14 @@ trait software_product_github_hosting
 		/* when getting the info/update api json file */
 		register_rest_route
 		(
-			$this->github_namespace, '/(?P<route_source>branch/|release/)?(?P<route_slug>.+)(?P<route_delim>[\.\-\+])json',
+			$this->github_namespace, '/(?P<update_source>branch/|release/)?(?P<update_slug>.+)(?P<rdelim>[\.\-\+])json',
 			array([
 				'methods'				=> 'GET',
 				'callback'				=> array( $this, 'rest_api_info' ),
 				'permission_callback' 	=> array( $this, 'rest_api_authentication' ),
 				'args'					=> array(
-					'route_type'		=> ['default' => 'info'],
+					'update_type'		=> ['default' => 'info'],
+					'update_id'			=> ['default' => ''],
 					'cache'				=> ['default' => $this->cache_default],
 				),
 			])
@@ -341,13 +342,14 @@ trait software_product_github_hosting
 		/* when downloading via the WordPress plugin update api (download_link/package) */
 		register_rest_route
 		(
-			$this->github_namespace, '/(?P<route_source>branch/|release/)(?P<route_slug>.+)[\.\-\+]proxy',
+			$this->github_namespace, '/(?P<update_source>branch/|release/)(?P<update_slug>.+)[\.\-\+]proxy',
 			array([
 				'methods'				=> 'GET',
 				'callback'				=> array( $this, 'rest_api_proxy' ),
 				'permission_callback' 	=> array( $this, 'rest_api_authentication' ),
 				'args'					=> array(
-					'route_type'		=> ['default' => 'proxy'],
+					'update_type'		=> ['default' => 'proxy'],
+					'update_id'			=> ['default' => ''],
 					'cache'				=> ['default' => $this->cache_default],
 				),
 			])
@@ -356,15 +358,16 @@ trait software_product_github_hosting
 		/* when downloading zip file (i.e. from external link) */
 		register_rest_route
 		(
-			$this->github_namespace, '/(?P<route_source>branch/|release/)?(?P<route_slug>.+)[\.\-\+]zip',
+			$this->github_namespace, '/(?P<update_source>branch/|release/)?(?P<update_slug>.+)[\.\-\+]zip',
 			array([
-					'methods'				=> 'GET',
-					'callback'				=> array( $this, 'rest_api_download' ),
-					'permission_callback' 	=> array( $this, 'rest_api_authentication' ),
-					'args'					=> array(
-						'route_type'		=> ['default' => 'download'],
-						'cache'				=> ['default' => $this->cache_default],
-					),
+				'methods'				=> 'GET',
+				'callback'				=> array( $this, 'rest_api_download' ),
+				'permission_callback' 	=> array( $this, 'rest_api_authentication' ),
+				'args'					=> array(
+					'update_type'		=> ['default' => 'download'],
+					'update_id'			=> ['default' => ''],
+					'cache'				=> ['default' => $this->cache_default],
+				),
 			])
 		);
 	}
@@ -379,11 +382,11 @@ trait software_product_github_hosting
 	public function rest_api_authentication(\WP_REST_Request $request)
 	{
 		$this->route = [
-			'slug' 		=> sanitize_text_field($request->get_param('route_slug')), 		// plugin name
-			'type' 		=> sanitize_text_field($request->get_param('route_type')),		// info|proxy|download
-			'source'	=> trim(sanitize_text_field($request->get_param('route_source')),'/'),	// branch|release
-			'sourceId'	=> sanitize_text_field($request->get_param('id')),				// branch name|release id
-			'delim' 	=> sanitize_text_field($request->get_param('route_delim')),		// .|-|+
+			'slug' 		=> sanitize_text_field($request->get_param('update_slug')), 	// plugin name
+			'type' 		=> sanitize_text_field($request->get_param('update_type')),		// info|proxy|download
+			'source'	=> trim(sanitize_text_field($request->get_param('update_source')),'/'),	// branch|release
+			'sourceId'	=> sanitize_text_field($request->get_param('update_id')),			// branch name|release id
+			'delim' 	=> sanitize_text_field($request->get_param('rdelim')),			// .|-|+
 		];
 
 		/* validate type */
@@ -508,7 +511,7 @@ trait software_product_github_hosting
 			$result = $package = [];
 			foreach ($terms as $term)
 			{
-				$this->route['slug'] = $request['route_slug'] = $term->slug;
+				$this->route['slug'] = $term->slug;
 				if ( (! $this->get_term_meta($term->term_id, 'github_plugin_slug'))
 				||   (! $this->get_term_meta($term->term_id, 'github_repository')) )
 				{
@@ -523,7 +526,7 @@ trait software_product_github_hosting
 			}
 			$result['eac_github_hosting'] = $plugin['eac_github_hosting'];
 			$result['eac_github_hosting']['package'] = $package;
-			$this->route['slug'] = $request['route_slug'] = 'plugin_info';
+			$this->route['slug'] = 'plugin_info';
 
 			/**
 			 * filter {classname}_github_api_plugin_info
@@ -1008,7 +1011,7 @@ trait software_product_github_hosting
 					$this->options['source'].'/'.
 					$this->route['slug'].
 					$this->route['delim'].
-					'proxy?id='.$this->options['sourceId'];
+					'proxy?update_id='.$this->options['sourceId'];
 		}
 
 		/* get download zip file */
