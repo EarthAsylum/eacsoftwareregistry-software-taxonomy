@@ -7,10 +7,10 @@
 
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Stable tag:         2.0.4  
-Last Updated:       08-Mar-2024  
+Stable tag:         2.0.5  
+Last Updated:       15-Apr-2024  
 Requires at least:  5.5.0  
-Tested up to:       6.4  
+Tested up to:       6.5  
 Requires PHP:       7.4  
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
 License:            GPLv3 or later  
@@ -155,7 +155,7 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 
 ### Upgrade Notice
 
-Requires {eac}SoftwareRegistry version 1.3.2+
+Requires {eac}SoftwareRegistry version 1.3.4+
 
 #### 2.0
 

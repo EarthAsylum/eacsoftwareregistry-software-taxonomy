@@ -9,7 +9,7 @@
  * @version		1.x
  *
  * included for register_options() method
- * @version 24.0301.1
+ * @version 24.0415.1
  */
 
 defined( 'ABSPATH' ) or exit;
@@ -101,6 +101,12 @@ $this->term_option_fields =
 						"<p>Please feel free to contact us at this email address.</p>\n".
 						"<p>Best Regards,</p>",
 					'info'		=> 	'Message included in client notification email, followed by registration details.',
+			),
+			'client_email_footer'		=> array(
+					'type'		=> 	'html',
+					'label'		=> 	'Client Email Footer',
+					'default'	=>	'',
+					'info'		=> 	'Optional footer added in client notification email.',
 			),
 			'client_api_message'		=> array(
 					'type'		=> 	'html',

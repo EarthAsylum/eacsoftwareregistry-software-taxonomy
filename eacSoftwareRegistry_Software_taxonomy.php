@@ -17,7 +17,7 @@
  * Description:			Software Registration Server Software Product Taxonomy - Define software products to be registered with {eac}Software Registration Server.
  * Version:				2.0.4
  * Requires at least:	5.5.0
- * Tested up to:		6.4
+ * Tested up to:		6.5
  * Requires PHP:		7.4
  * Plugin URI:          https://swregistry.earthasylum.com/software-taxonomy/
  * Author:				EarthAsylum Consulting

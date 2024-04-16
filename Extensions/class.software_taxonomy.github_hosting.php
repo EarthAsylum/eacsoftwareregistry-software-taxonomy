@@ -1629,8 +1629,10 @@ trait software_product_github_hosting
 				'data'			=>	$plugin_info->get_error_data(),
 			];
 		} else {
-			$default = $plugin_info['eac_github_hosting'];
-			$result['response'] = $default['package'];
+			if (isset($plugin_info['eac_github_hosting'])) {
+				$default = $plugin_info['eac_github_hosting'];
+				$result['response'] = $default['package'];
+			}
 		}
 
 		$datestr = '_'.time();

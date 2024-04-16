@@ -23,7 +23,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 	/**
 	 * @var string extension version
 	 */
-	const VERSION	= '24.0220.1';
+	const VERSION	= '24.0415.1';
 
 	/**
 	 * @var string taxonomy name
@@ -132,7 +132,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 		}
 
 		// filter client notifications
-		foreach(['client_email_message','client_api_message','client_success_notice','client_error_notice'] as $option_name)
+		foreach(['client_email_message','client_email_footer','client_api_message','client_success_notice','client_error_notice'] as $option_name)
 		{
 			$this->add_filter( $option_name,					function($default,$registry,$post) use($option_name)
 				{

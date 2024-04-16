@@ -4,7 +4,7 @@ Author:                 [My Company](https://www.my_domain.com)
 Stable tag:             1.0.0
 Last Updated:           22-Feb-2024
 Requires at least:      5.8.0
-Tested up to:           6.4
+Tested up to:           6.5
 Requires PHP:           7.4
 Contributors:           my_wp_userid, myprofile@github
 License:                GPLv3 or later
