@@ -23,7 +23,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 	/**
 	 * @var string extension version
 	 */
-	const VERSION	= '24.0415.1';
+	const VERSION	= '24.0425.1';
 
 	/**
 	 * @var string taxonomy name
@@ -552,7 +552,6 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 
 		$termMeta = $this->get_term_meta($term->term_id);
 
-		$width = 50; // only first group
 		$i = 0;
 		foreach ($this->term_option_fields as $groupName => $optionMeta)
 		{
@@ -567,13 +566,13 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 				echo $this->plugin->html_input_block($optionKey, $optionData, $optionValue, $width);
 				if ($groupName == 'license_limitations')
 				{
-					if ((++$i % 6) == 0) echo "<div style='grid-column: 1/-1'><hr></div>";
+					if ((++$i % 6) == 0) echo "<div style='grid-column: 1/-1'><hr></div>".
+											  "<div style='grid-column: 1/-1'></div>";
 				}
 			}
 			echo "</fieldset>\n";
 			echo "</section>\n";
 			echo "</td></tr>\n";
-			$width = 15;
 		}
 		echo "</tbody></table>\n";
 		echo "<hr/>";
@@ -737,7 +736,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 		{
 			if ($options = $this->get_term_meta($term->term_id))
 			{
-				return ($key) ? ($options[$key] ?? $default) : $options;
+				return ($key) ? ($options[$key] ?: $default) : $options;
 			}
 		}
 		return $default;
