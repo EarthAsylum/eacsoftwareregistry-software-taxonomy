@@ -8,7 +8,7 @@ namespace EarthAsylumConsulting\Extensions;
  * @package		{eac}SoftwareRegistry
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
  * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
- * @version		1.x
+ * @version		24.0524.1
  */
 
 trait software_product_github_hosting
@@ -16,7 +16,7 @@ trait software_product_github_hosting
 	/**
 	 * @var string trait version
 	 */
-	private $TRAIT_VERSION 		= '24.0308.1';
+	private $TRAIT_VERSION 		= '24.0524.1';
 
 	/**
 	 * @var string local folder
@@ -1516,9 +1516,9 @@ trait software_product_github_hosting
 				}
 			}
 		}
-		if (!empty($plugin_info['section']['upgrade_notice']))
+		if (isset($plugin_info['sections']['upgrade_notice']))
 		{
-			$update['upgrade_notice'] = $plugin_info['section']['upgrade_notice'];
+			$update['upgrade_notice'] = $plugin_info['sections']['upgrade_notice'];
 		}
 
 		return $update;

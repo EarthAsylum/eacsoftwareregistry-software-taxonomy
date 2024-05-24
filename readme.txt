@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.7
-Last Updated:       25-Apr-2024
+Stable tag:         2.0.8
+Last Updated:       24-May-2024
 Requires at least:  5.5.0
 Tested up to:       6.5
 Requires PHP:       7.4
@@ -167,6 +167,10 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.8 – May 24, 2024 =
+
++   Fix update object upgrade_info not set.
 
 = Version 2.0.7 – April 25, 2024 =
 
