@@ -4,7 +4,7 @@ Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
 Stable tag:         2.0.8
 Last Updated:       24-May-2024
 Requires at least:  5.8
-Tested up to:       6.6
+Tested up to:       6.7
 Requires PHP:       7.4
 Contributors:       kevinburkholder
 License:            GPLv3 or later
