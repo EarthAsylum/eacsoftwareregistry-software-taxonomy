@@ -6,7 +6,6 @@
  * @package		{eac}SoftwareRegistry Software Product Taxonomy
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
  * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
- * @version		2.0.8
  * @uses		{eac}SoftwareRegistry
  *
  * @see https://developer.wordpress.org/reference/functions/plugins_api/
@@ -15,7 +14,7 @@
  * @wordpress-plugin
  * Plugin Name:			{eac}SoftwareRegistry Software Taxonomy
  * Description:			Software Registration Server Software Product Taxonomy - Define software products to be registered with {eac}Software Registration Server.
- * Version:				2.0.8
+ * Version:				2.0.9
  * Requires at least:	5.8
  * Tested up to:		6.7
  * Requires PHP:		7.4

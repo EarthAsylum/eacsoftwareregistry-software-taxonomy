@@ -8,7 +8,6 @@ namespace EarthAsylumConsulting\Extensions;
  * @package		{eac}SoftwareRegistry
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
  * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
- * @version		24.0524.1
  */
 
 trait software_product_github_hosting
@@ -16,7 +15,7 @@ trait software_product_github_hosting
 	/**
 	 * @var string trait version
 	 */
-	private $TRAIT_VERSION 		= '24.0524.1';
+	private $TRAIT_VERSION 		= '24.1123.1';
 
 	/**
 	 * @var string local folder
@@ -1607,19 +1606,21 @@ trait software_product_github_hosting
 			return $plugin_info;
 		}
 
-		$logfile_path = trailingslashit($this->varServer('document_root')).trim(EAC_GITHUB_API_LOG,'/');
+		$logfile_path = trailingslashit(ABSPATH).trim(EAC_GITHUB_API_LOG,'/');
 
 		$logfile = new \stdClass();
-		if ($this->fs->exists($logfile_path)) {
-			if ($logfile = $this->fs->get_contents($logfile_path)) {
-				$logfile = json_decode($logfile);
-			}
-		}
+
+	//	if ($this->fs->exists($logfile_path)) {
+	//		if ($logfile = $this->fs->get_contents($logfile_path)) {
+	//			$logfile = json_decode($logfile);
+	//		}
+	//	}
+
 		$result['request'] = [
 			'time'				=> 	wp_date('c'),
 			'request'			=> 	$this->varServer('request_uri'),
 			'route'				=> 	[$this->route['type'] => $request->get_route()],
-			'remote_addr'		=> 	$this->varServer('remote_addr'),
+			'remote_addr'		=> 	$this->plugin->getVisitorIP(), //$this->varServer('remote_addr'),
 			'user_agent'		=> 	$request->get_header('user_agent'),
 		];
 		if (is_wp_error($plugin_info)) {
@@ -1635,9 +1636,11 @@ trait software_product_github_hosting
 			}
 		}
 
-		$datestr = '_'.time();
-		$logfile->{$datestr} = $result;
-		$this->fs->put_contents($logfile_path,json_encode($logfile,JSON_PRETTY_PRINT));
+	//	$datestr = '_'.time();
+	//	$logfile->{$datestr} = $result;
+	//	$this->fs->put_contents($logfile_path,json_encode($logfile,JSON_PRETTY_PRINT));
+		file_put_contents($logfile_path,json_encode($result,JSON_PRETTY_PRINT)."\n",FILE_APPEND);
+		$this->fs->chmod($logfile_path, FS_CHMOD_FILE | 0660);
 
 		return $plugin_info;
 	}

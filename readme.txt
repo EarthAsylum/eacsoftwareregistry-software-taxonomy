@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.8
-Last Updated:       24-May-2024
+Stable tag:         2.0.9
+Last Updated:       23-Nov-2024
 Requires at least:  5.8
 Tested up to:       6.7
 Requires PHP:       7.4
@@ -145,15 +145,6 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 +   [Implementing the Software Registry SDK](https://swregistry.earthasylum.com/software-registry-sdk/)
 
 
-== Upgrade Notice ==
-
-Requires {eac}SoftwareRegistry version 1.3.4+
-
-= 2.0 =
-
-Requires {eac}Doojigger version 2.5+.
-Requires {eac}Readme version 1.4+ for GitHub hosting.
-
 
 == Copyright ==
 
@@ -167,6 +158,11 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.9 – November 23, 2024 =
+
++   Change handling of github hosting log file by appending rather than read/write resulting in change to format.
++   Compatible with WordPress 6.7.
 
 = Version 2.0.8 – May 24, 2024 =
 
