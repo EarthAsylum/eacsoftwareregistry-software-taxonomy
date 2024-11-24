@@ -161,6 +161,7 @@ You should receive a copy of the GNU General Public License along with this prog
 
 = Version 2.0.9 – November 23, 2024 =
 
++   Added 'client_api_supplemental' field and filter to pass supplemental html to client via api response.
 +   Change handling of github hosting log file by appending rather than read/write resulting in change to format.
 +   Compatible with WordPress 6.7.
 

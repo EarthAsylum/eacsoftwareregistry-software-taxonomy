@@ -6,10 +6,9 @@
  * @package		{eac}SoftwareRegistry
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
  * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
- * @version		1.x
  *
  * included for register_options() method
- * @version 24.0415.1
+ * @version 24.1123.1
  */
 
 defined( 'ABSPATH' ) or exit;
@@ -116,6 +115,14 @@ $this->term_option_fields =
 						"<a href='mailto:[registrar_contact]'>[registrar_contact]</a></em>",
 					'info'		=> 	'Short message included with API response.',
 					'help'		=>	'[info] <br><cite>registrar->message</cite>',
+					'wp_editor'	=> ['media_buttons' => false],
+			),
+			'client_api_supplemental'	=> array(
+					'type'		=> 	'html',
+					'label'		=> 	'Client API Supplemental',
+					'default'	=>	'',
+					'info'		=> 	'Suplemental html passed to client via api response.',
+					'help'		=>	'[info] <br><cite>supplemental</cite>',
 					'wp_editor'	=> ['media_buttons' => false],
 			),
 			'client_success_notice'		=> array(

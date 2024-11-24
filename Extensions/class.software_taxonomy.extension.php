@@ -8,7 +8,6 @@ namespace EarthAsylumConsulting\Extensions;
  * @package		{eac}SoftwareRegistry
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
  * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
- * @version		1.x
  */
 
 include('class.software_taxonomy.github_hosting.php');
@@ -23,7 +22,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 	/**
 	 * @var string extension version
 	 */
-	const VERSION	= '24.0425.1';
+	const VERSION	= '24.1123.1';
 
 	/**
 	 * @var string taxonomy name
@@ -132,7 +131,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 		}
 
 		// filter client notifications
-		foreach(['client_email_message','client_email_footer','client_api_message','client_success_notice','client_error_notice'] as $option_name)
+		foreach(['client_email_message','client_email_footer','client_api_message','client_api_supplemental','client_success_notice','client_error_notice'] as $option_name)
 		{
 			$this->add_filter( $option_name,					function($default,$registry,$post) use($option_name)
 				{
