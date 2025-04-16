@@ -7,8 +7,8 @@
 
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Stable tag:         2.0.9  
-Last Updated:       23-Nov-2024  
+Stable tag:         2.0.10  
+Last Updated:       10-Mar-2025  
 Requires at least:  5.8  
 Tested up to:       6.7  
 Requires PHP:       7.4  

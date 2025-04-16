@@ -22,7 +22,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 	/**
 	 * @var string extension version
 	 */
-	const VERSION	= '24.1123.1';
+	const VERSION	= '25.0310.1';
 
 	/**
 	 * @var string taxonomy name
@@ -735,7 +735,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 		{
 			if ($options = $this->get_term_meta($term->term_id))
 			{
-				return ($key) ? ($options[$key] ?: $default) : $options;
+				return ($key) ? ($options[$key] ?? $default) : $options;
 			}
 		}
 		return $default;

@@ -1,8 +1,8 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.9
-Last Updated:       23-Nov-2024
+Stable tag:         2.0.10
+Last Updated:       10-Mar-2025
 Requires at least:  5.8
 Tested up to:       6.7
 Requires PHP:       7.4
@@ -148,7 +148,7 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 
 == Copyright ==
 
-= Copyright © 2019-2024, EarthAsylum Consulting, distributed under the terms of the GNU GPL. =
+= Copyright © 2019-2025, EarthAsylum Consulting, distributed under the terms of the GNU GPL. =
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
@@ -158,6 +158,10 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.0.10 – March 10, 2025 =
+
++   Fix `PHP Warning:  Undefined array key` in taxonomy extension.
 
 = Version 2.0.9 – November 23, 2024 =
 
