@@ -7,10 +7,10 @@
 
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Stable tag:         2.0.10  
-Last Updated:       10-Mar-2025  
+Stable tag:         2.0.11  
+Last Updated:       19-Apr-2025  
 Requires at least:  5.8  
-Tested up to:       6.7  
+Tested up to:       6.8  
 Requires PHP:       7.4  
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
 License:            GPLv3 or later  
