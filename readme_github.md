@@ -3,6 +3,7 @@ Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
 Last Updated:       08-Mar-2024  
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
+Donate link:        https://github.com/sponsors/EarthAsylum  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
 Github URI:         https://github.com/EarthAsylum/eacsoftwareregistry-software-taxonomy  
 
