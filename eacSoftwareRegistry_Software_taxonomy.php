@@ -14,7 +14,7 @@
  * @wordpress-plugin
  * Plugin Name:			{eac}SoftwareRegistry Software Taxonomy
  * Description:			Software Registration Server Software Product Taxonomy - Define software products to be registered with {eac}Software Registration Server.
- * Version:				2.0.11
+ * Version:				2.0.12
  * Requires at least:	5.8
  * Tested up to:		6.8
  * Requires PHP:		7.4

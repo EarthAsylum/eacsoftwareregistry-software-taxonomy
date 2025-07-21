@@ -7,7 +7,7 @@ namespace EarthAsylumConsulting\Extensions;
  * @category	WordPress Plugin
  * @package		{eac}SoftwareRegistry
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
- * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
+ * @copyright	Copyright (c) 2025 EarthAsylum Consulting <www.earthasylum.com>
  */
 
 include('class.software_taxonomy.github_hosting.php');
@@ -22,7 +22,7 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 	/**
 	 * @var string extension version
 	 */
-	const VERSION	= '25.0310.1';
+	const VERSION	= '25.0720.1';
 
 	/**
 	 * @var string taxonomy name
@@ -122,6 +122,16 @@ class software_product_taxonomy extends \EarthAsylumConsulting\abstract_extensio
 
 		// filter registrar contact info
 		foreach(['registrar_name','registrar_contact','registrar_phone','registrar_web'] as $option_name)
+		{
+			$this->add_filter( $option_name,					function($default,$slug) use($option_name)
+				{
+					return $this->get_software_options($default,$slug,$option_name);
+				},
+			10,2);
+		}
+
+		// filter registrar options
+		foreach(['registrar_status','registrar_term','registrar_fullterm','registrar_license'] as $option_name)
 		{
 			$this->add_filter( $option_name,					function($default,$slug) use($option_name)
 				{

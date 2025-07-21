@@ -7,8 +7,8 @@
 
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Stable tag:         2.0.11  
-Last Updated:       19-Apr-2025  
+Stable tag:         2.0.12  
+Last Updated:       21-Jul-2025  
 Requires at least:  5.8  
 Tested up to:       6.8  
 Requires PHP:       7.4  
@@ -153,5 +153,16 @@ Taxonomy settings available from this extension will be seen in the *Software Re
 
 +   [Implementing the Software Registry SDK](https://swregistry.earthasylum.com/software-registry-sdk/)
 
+
+
+### Copyright
+
+#### Copyright © 2019-2025, EarthAsylum Consulting, distributed under the terms of the GNU GPL.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.  
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should receive a copy of the GNU General Public License along with this program. If not, see [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).
 
 
