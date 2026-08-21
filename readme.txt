@@ -1,10 +1,10 @@
 === {eac}SoftwareRegistry Software Taxonomy ===
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)
-Stable tag:         2.0.13
-Last Updated:       20-Jul-2026
+Stable tag:         2.1.0
+Last Updated:       21-Aug-2026
 Requires at least:  5.8
-Tested up to:       7.0
+Tested up to:       7.1
 Requires PHP:       8.1
 Contributors:       kevinburkholder
 Donate link:        https://github.com/sponsors/EarthAsylum
@@ -59,7 +59,6 @@ When an API request is received by the registry server, the `registry_product` i
     +   _Repository Source_         - Select which source to use from the repository (branch, release).
     +   _Tag Name_                  - (Optional) Specific release or branch tag name (or id).
     +   _Path to readme.txt_        - Pathname within the repository to the readme.txt file.
-If blank, the json file will be generated from information available in the GitHub repository.
     +   _GitHub Access Token_       - Your GitHub personal access token, Increases the github rate limit and is required for private repositories.
     +   _Plugin URLs_               - Displays the URL(s) you will need for your plugin file and readme.txt file.
 
@@ -159,6 +158,16 @@ You should receive a copy of the GNU General Public License along with this prog
 
 
 == Changelog ==
+
+= Version 2.1.0 – August 21, 2026 =
+
++	Changed default zip file name to match WP naming convention.
+	+	`plugin-name.tag.zip`, no longer `plugin-name-tag.zip` (though still supported).
++   Fixed/improved processing of `.distignore` to ignore files in final zip archive.
++	Use `.distignore` from branch or release when not found in downloaded zipball.
+	+	May be excluded from zipball by `.gitattributes`.
++	Suppress erroneous `Authorization` header on local files when GitHub token is set.
++	Wrapper to set context and suppress errors from `file_get_contents()`.
 
 = Version 2.0.13 – July 20, 2026 =
 

@@ -14,9 +14,9 @@
  * @wordpress-plugin
  * Plugin Name:			{eac}SoftwareRegistry Software Taxonomy
  * Description:			Software Registration Server Software Product Taxonomy - Define software products to be registered with {eac}Software Registration Server.
- * Version:				2.0.13
+ * Version:				2.1.0
  * Requires at least:	5.8
- * Tested up to:		7.0
+ * Tested up to:		7.1
  * Requires PHP:		8.1
  * Plugin URI:          https://swregistry.earthasylum.com/software-taxonomy/
  * Author:				EarthAsylum Consulting

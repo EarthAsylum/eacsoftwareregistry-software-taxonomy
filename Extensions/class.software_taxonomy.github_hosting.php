@@ -7,7 +7,7 @@ namespace EarthAsylumConsulting\Extensions;
  * @category	WordPress Plugin
  * @package		{eac}SoftwareRegistry
  * @author		Kevin Burkholder <KBurkholder@EarthAsylum.com>
- * @copyright	Copyright (c) 2024 EarthAsylum Consulting <www.earthasylum.com>
+ * @copyright	Copyright (c) 2026 EarthAsylum Consulting <www.earthasylum.com>
  */
 
 trait software_product_github_hosting
@@ -15,7 +15,7 @@ trait software_product_github_hosting
 	/**
 	 * @var string trait version
 	 */
-	private $TRAIT_VERSION 		= '24.1123.1';
+	private $TRAIT_VERSION 		= '26.0821.1';
 
 	/**
 	 * @var string local folder
@@ -229,10 +229,10 @@ trait software_product_github_hosting
 	/**
 	 * github request stream context for remote file_get_contents()
 	 *
-	 * @param 	string	$context - json | zip | text
+	 * @param 	string	$context - json | zip | text | none
 	 * @return	resource context with headers
 	 */
-	private function github_stream_context(string $context='json')
+	private function github_stream_context(string $context='json', bool $auth=true)
 	{
 		static $github_header = "X-GitHub-Api-Version: 2022-11-28" . "\r\n";
 		static $agent_header = null;
@@ -245,7 +245,7 @@ trait software_product_github_hosting
 							home_url( '/' ) . "\r\n";
 		}
 
-		$auth_header = ($this->options['token'])
+		$auth_header = ($auth && $this->options['token'])
 				? "Authorization: Token ".$this->options['token'] . "\r\n" : "";
 
 		switch ($context) {
@@ -406,7 +406,7 @@ trait software_product_github_hosting
 			);
 		}
 
-		/* sourceId may be 'latest', 'default', or release id, or branch name
+		/* sourceId may be 'latest', 'default', or release id, or branch name */
 
 		/* check for / validate registration/authorization */
 		if ($registration = $request->get_header('Authorization'))
@@ -768,15 +768,12 @@ trait software_product_github_hosting
 	 */
 	private function getPluginRepository()
 	{
-		/* set the stream context for github reading */
-		$context = $this->github_stream_context('json');
-
 		/* get the repository */
 		$contentURL = sprintf("https://api.github.com/repos/%s",
 						$this->options['repository']
 					);
 
-		if (! $content = @file_get_contents($contentURL,false,$context))
+		if (! $content = $this->file_get_contents($contentURL,false,'json'))
 		{
 			return new \WP_Error( 'github_no_repository', 'unable to access repository '.$this->options['repository'],
 				[	'status'	=> 400,
@@ -797,9 +794,6 @@ trait software_product_github_hosting
 	 */
 	private function getPluginRelease()
 	{
-		/* set the stream context for github reading */
-		$context = $this->github_stream_context('json');
-
 		/* get the latest release */
 		if (in_array($this->options['source'],['either','release']))
 		{
@@ -813,7 +807,7 @@ trait software_product_github_hosting
 					: 'tags/'.$this->options['sourceId'] 	// | tag name
 			);
 
-			if ($content = @file_get_contents($contentURL,false,$context)) {
+			if ($content = $this->file_get_contents($contentURL,false,'json')) {
 				$content = json_decode($content,true);
 				$this->options['source'] 	= 'release';
 				$this->options['sourceId'] 	= $content['id'];
@@ -832,7 +826,7 @@ trait software_product_github_hosting
 				$this->options['sourceId'] // $this->repository['default_branch']
 			);
 
-			if ($content = @file_get_contents($contentURL,false,$context)) {
+			if ($content = $this->file_get_contents($contentURL,false,'json')) {
 				$content = json_decode($content,true);
 				$this->options['source'] 	= 'branch';
 				$this->options['sourceId'] 	= $content['name'];
@@ -973,7 +967,7 @@ trait software_product_github_hosting
 		/* remove non-numeric prefix in version strings (vn.n.n) */
 		foreach (['version','requires','tested','requires_php'] as $name)
 		{
-			$value = preg_replace("|[1-9]+.*|",'$0',$plugin_info[$name]);
+			$value = preg_replace("|[0-9]+.*|",'$0',$plugin_info[$name]);
 			if (!empty($value)) $plugin_info[$name] = $value;
 		}
 
@@ -1004,7 +998,6 @@ trait software_product_github_hosting
 			$plugin_info = $this->getPluginInfoAssets($plugin_info);
 
 			/* force download link through api proxy */
-			//$source = ($this->options['source'] == 'default_branch') ? 'branch' : 'release';
 			$this->options['override']['download_link'] =
 					$this->github_api_path.
 					$this->options['source'].'/'.
@@ -1140,9 +1133,8 @@ trait software_product_github_hosting
 		}
 
 		/* read the release tree looking for assets folder */
-		$context = $this->github_stream_context('json');
 		$contents = str_replace('{/sha}','/'.$this->release['tag_name'],$this->repository['trees_url']);
-		if (! $contents = @file_get_contents($contents,false,$context)) {
+		if (! $contents = $this->file_get_contents($contents,false,'json')) {
 			return $plugin_info;
 		}
 		$contents = json_decode($contents, true);
@@ -1153,7 +1145,7 @@ trait software_product_github_hosting
 			if (in_array($leaf['path'],array_merge($this->WP_ASSETS[0],$this->WP_ASSETS[1])))
 			{
 				$assetPath = $leaf['path'];
-				if (! $leaf = @file_get_contents($leaf['url'],false,$context)) {
+				if (! $leaf = $this->file_get_contents($leaf['url'],false,'json')) {
 					return $plugin_info;
 				}
 				$leaf = json_decode($leaf, true);
@@ -1180,7 +1172,7 @@ trait software_product_github_hosting
 			{
 				$type = pathinfo($asset['path'], PATHINFO_EXTENSION);
 				if (!in_array($type,$this->IMAGE_TYPES)) continue;
-				if ($contents = @file_get_contents($asset['url'],false,$context))
+				if ($contents = $this->file_get_contents($asset['url'],false,'json'))
 				{
 					$contents = json_decode($contents, true);
 					$this->fs->put_contents($this->LOCAL_ASSETS.'/'.$asset['path'], base64_decode($contents['content']),FS_CHMOD_FILE | 0660);
@@ -1291,8 +1283,11 @@ trait software_product_github_hosting
 		$isZipball = true; // we need to reprocess (full repository) zipballs
 
 		$maybe_files = [
-				$this->plugin_slug."-{$this->release['tag_name']}.zip",	// default, using -tagname
+				$this->plugin_slug.".{$this->release['tag_name']}.zip",	// using .tagname, default
+				$this->plugin_slug."-{$this->release['tag_name']}.zip",	// using -tagname
+				$this->plugin_slug."_{$this->release['tag_name']}.zip",	// using _tagname
 				$this->plugin_slug.".{$plugin_info['version']}.zip",	// using .version
+				$this->plugin_slug."-{$plugin_info['version']}.zip",	// using -version
 				$this->plugin_slug."_{$plugin_info['version']}.zip",	// using _version
 				$this->plugin_slug.".zip"								// unversioned
 		];
@@ -1339,8 +1334,8 @@ trait software_product_github_hosting
 		if ($this->isPrivate || $isZipball)
 		{
 			$download = ($asset) ? $asset['url'] : $plugin_info["download_link"];
-			$context = $this->github_stream_context( $isZipball ? 'none' : 'zip' );
-			if ($download = @file_get_contents($download,false,$context))
+			$context = ($isZipball) ? 'none' : 'zip';
+			if ($download = $this->file_get_contents($download,false,$context))
 			{
 				$zipFile = ($isZipball ? $this->TEMP_PATH : $this->LOCAL_PATH).'/'.$downloadName;
 				$this->fs->put_contents($zipFile, $download, FS_CHMOD_FILE | 0660);
@@ -1370,16 +1365,15 @@ trait software_product_github_hosting
 	 */
 	private function getPluginDownloadFile(array $plugin_info, string $zipFile, string $downloadName): array
 	{
-
-		/* unzip and remove files/folders from zipball */
-		$zipballPath = $this->TEMP_PATH."/temp_".$this->plugin_slug.'_zipball';
+		/* extract zipball in temp folder */
+		$zipballPath = $this->TEMP_PATH."/zipball_".$this->plugin_slug;
 		$distignore = '.distignore';
 		$zip = new \ZipArchive;
 		if ($zip->open($zipFile)) {
 			// looking for {owner}-{repo}-{sha}/.distignore",
 			$files = $zip->count();
 			for ($i=0; $i < $files; $i++) {
-				$parts = explode(DIRECTORY_SEPARATOR, $zip->getNameIndex($i));
+				$parts = explode('/', $zip->getNameIndex($i));
 				if (count($parts) == 2 && $parts[1] == '.distignore') {
 					$distignore = $zip->getNameIndex($i);
 					break;
@@ -1392,34 +1386,20 @@ trait software_product_github_hosting
 		}
 		$this->fs->delete($zipFile);
 
-		/* get ignored files (match with regex) */
-		$distignore = $zipballPath.'/'.$distignore;
-		if (file_exists($distignore)) {
-			$distignore 	= file($distignore,FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
-		} else {
-			$distignore 	= array_map(function($v){return '/'.preg_quote($v);},$this->WP_ASSETS[0]);
-		}
-		$distignore[] 		= '/\\.+';
-		$distignore = array_filter(array_map(function($ignore) {
-			$ignore = ltrim($ignore,' \t');
-			if (empty($ignore) || $ignore[0] == '#') {
-				$ignore = null;
-			}
-			if ($ignore[0] == '/') {
-				$ignore = '^'.$this->plugin_slug.$ignore;
-			}
-			return $ignore;
-		},$distignore));
+		/* get .distignore contents */
+		$distignore = $this->getDistIgnore($zipballPath,$distignore);
 
 		$foldersToDelete 	= array($zipballPath);
 		$filesToDelete 		= array();
 		$repoPath 			= str_replace('/','-',$this->repository['full_name']);
 		$zipballPath 		= realpath($zipballPath);
 
-		/* create zip as temp file */
-		$tempZipFile 		= $this->TEMP_PATH.'/'.$downloadName;
+		/* traverse zipball files, filter .distignore, add to temp zip file */
+		$tempZipFile 		= $this->TEMP_PATH.'/'.$this->plugin_slug.'.zip';
 		$zip = new \ZipArchive;
 		$zip->open($tempZipFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+		//$this->plugin->logDebug(['zipball'=>$zipballPath,'tempzip'=>$tempZipFile,'download'=>$downloadName,'distignore'=>$distignore],__FUNCTION__);
 
 		/* Create recursive directory iterator */
 		$files = new \RecursiveIteratorIterator(
@@ -1437,32 +1417,47 @@ trait software_product_github_hosting
 				$filesToDelete[] 	= $filePath;
 			}
 
-			// get relative path for current file
-			$filename = preg_filter(
-					"|^".$repoPath."-(\w{5,})/|", "/",	// remove github path ({owner}-{repo}-{sha})
-					substr($filePath, strlen($zipballPath) + 1)
+			/* get relative path for current file */
+			$relativePath = '/'.preg_filter(
+				"|^".$repoPath."-(\w{5,})/|", "",			// remove github path ({owner}-{repo}-{sha})
+				substr($filePath, strlen($zipballPath)+1)	// remove zipball path
 			);
-			if (empty($filename)) continue;				// empty {owner}-{repo}-{sha} folder
-			$relativePath = $this->plugin_slug.$filename;
+			if (empty(rtrim($relativePath,'/'))) continue;	// empty {owner}-{repo}-{sha} folder
 
-			// skip ignored files/folders
+			$relativePath = str_replace('\\', '/', $relativePath);
+
+			/* skip ignored files/folders */
+			$ignored = false;
 			foreach ($distignore as $ignore) {
-				if (preg_match("|{$ignore}|", $relativePath)) {
-					continue 2;
+				if ($ignore[0] == '!') {					// explicitly not ignored
+					$nignore = substr($ignore,1);
+		        	if (fnmatch($nignore, $relativePath) || fnmatch("$nignore*", $relativePath) || fnmatch("*/$nignore*", $relativePath)) {
+						//$this->plugin->logDebug("Allowed: |{$ignore}|, {$relativePath}",__FUNCTION__);
+						$ignored = false;
+						break;
+					}
+				}
+		        if (fnmatch($ignore, $relativePath) || fnmatch("$ignore*", $relativePath) || fnmatch("*/$ignore*", $relativePath)) {
+					//$this->plugin->logDebug("Ignored: |{$ignore}|, {$relativePath}",__FUNCTION__);
+					$ignored = true;
 				}
 			}
 
-			if ($file->isDir()) {
-				$zip->addEmptyDir($relativePath);
-			} else {
-				$zip->addFile($filePath, $relativePath);
+			if (!$ignored) {
+				$relativePath = $this->plugin_slug.$relativePath;
+				//$this->plugin->logDebug("Included: {$relativePath}",__FUNCTION__);
+				if ($file->isDir()) {
+					$zip->addEmptyDir($relativePath);
+				} else {
+					$zip->addFile($filePath, $relativePath);
+				}
 			}
 		}
 		$zip->close();
 
-		/* copy file to our local folder */
+		/* copy zip file to our local folder */
 		$downloadFile = $this->LOCAL_PATH.'/'.$downloadName;
-		// copy temp file to get owner/group set
+		/* copy temp file to get owner/group set */
 		$this->fs->copy($tempZipFile, $downloadFile, true);
 		unlink($tempZipFile);
 
@@ -1483,6 +1478,43 @@ trait software_product_github_hosting
 
 
 	/**
+	 * getDistIgnore - get the .distignore content
+	 *
+	 * @param string zipball pathname
+	 * @param string distignore filename
+	 * @return 	array
+	 */
+	private function getDistIgnore($zipballPath,$distignore): array
+	{
+		$distignore = $zipballPath.'/'.$distignore;
+		if (file_exists($distignore)) {		// local file included in zipball
+			$distignore 	= file($distignore,FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
+		} else {							// retrieve from github branch/release
+			$level = error_reporting(0);
+			$distignore 	= sprintf("https://raw.githubusercontent.com/%s/%s/%s",
+									$this->repository['full_name'],
+									$this->release['tag_name'],
+									'.distignore',
+								);
+			$distignore 	= file($distignore,FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
+			error_reporting($level);
+		}
+
+		if (empty($distignore)) {			// use default values
+			$distignore 	= array_map(function($v){return '/'.$v;},$this->WP_ASSETS[0]);
+			$distignore[] 	= '/.*';
+		}
+
+		$distignore = array_filter(array_map(function($ignore) {
+			$ignore = trim($ignore);
+			return (empty($ignore) || $ignore[0] == '#') ? null : str_replace('+','*',$ignore);
+		},$distignore));
+
+		return $distignore;
+	}
+
+
+	/**
 	 * getPluginInfoUpdate - get plugin api array [wp_update_plugins()] from plugin_info array
 	 *
 	 * @param 	object	$request - WP_REST_Request Request object.
@@ -1495,12 +1527,11 @@ trait software_product_github_hosting
 				'slug'				=> $plugin_info['slug'],
 				'plugin' 			=> $plugin_info['plugin'],
 				'version'			=> $plugin_info['version'],
-				'url'				=> $plugin_info['homepage'],
-				'package'			=> $plugin_info['download_link'],
-				'requires'			=> $plugin_info['requires'],
-				'tested'			=> $plugin_info['tested'],
-				'requires_php'		=> $plugin_info['requires_php'],
-			//	'translations'		=> [],
+				'url'				=> $plugin_info['homepage'] ?? '',
+				'package'			=> $plugin_info['download_link'] ?? '',
+				'requires'			=> $plugin_info['requires'] ?? '',
+				'tested'			=> $plugin_info['tested'] ?? '',
+				'requires_php'		=> $plugin_info['requires_php'] ?? '',
 		);
 		foreach (['banners','banners_rtl','icons'] as $type)
 		{
@@ -1562,11 +1593,7 @@ trait software_product_github_hosting
 		header("Content-Description: File Transfer");
 		header("Content-Disposition: attachment; filename=$basename");
 		header("Content-Type: application/zip");
-		$context 	= $this->github_stream_context('zip');
-		//	$data 		= @file_get_contents($plugin_info["download_link"],false,$context);
-		//	$filesize 	= strlen($data);
-		//	header("Content-Length: $filesize");
-		//	echo $data;
+		$context 	= $this->github_stream_context('zip',false);
 		readfile($plugin_info["download_link"],false,$context);
 		die();
 	}
@@ -1581,15 +1608,14 @@ trait software_product_github_hosting
 	 */
 	public function get_redirect_download(\WP_REST_Request $request, $plugin_info)
 	{
-		return new \WP_REST_Response(null,302,
-			array_merge(
+		$headers = array_merge(
 				wp_get_nocache_headers(),
-				['Location' => $plugin_info['download_link']]
-			)
+				[
+					'Location' 	=> $plugin_info['download_link']
+				]
 		);
-	//	nocache_headers
-	//	wp_redirect($plugin_info['download_link']);
-	//	die();
+		unset( $headers['Last-Modified'] );
+		return new \WP_REST_Response(null,302,$headers);
 	}
 
 
@@ -1643,5 +1669,25 @@ trait software_product_github_hosting
 		$this->fs->chmod($logfile_path, FS_CHMOD_FILE | 0660);
 
 		return $plugin_info;
+	}
+
+	/**
+	 * wrapper for file_get_contents with error suppression and context
+	 *
+	 * @param 	string $filename
+	 * @param 	bool $use_include_path
+	 * @param 	resource|string $context
+	 * @return 	string|false
+	 */
+	private function file_get_contents(string $filename, bool $use_include_path = false, $context = null): string|false
+	{
+		$level = error_reporting(0);
+		if (is_string($context)) {
+			/* set the stream context for github reading */
+			$context = $this->github_stream_context($context);
+		}
+		$content = file_get_contents($filename,false,$context);
+		error_reporting($level);
+		return $content;
 	}
 }

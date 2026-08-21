@@ -1,11 +1,22 @@
 ## {eac}SoftwareRegistry Software Taxonomy - Github Hosting  
+[![EarthAsylum Consulting](https://img.shields.io/badge/EarthAsylum-Consulting-0?&labelColor=6e9882&color=707070)](https://earthasylum.com/)
+[![WordPress](https://img.shields.io/badge/WordPress-Plugins-grey?logo=wordpress&labelColor=blue)](https://wordpress.org/plugins/search/EarthAsylum/)
+[![eacDoojigger](https://img.shields.io/badge/Requires-%7Beac%7DDoojigger-da821d)](https://eacDoojigger.earthasylum.com/)
+[![Sponsorship](https://img.shields.io/static/v1?label=Sponsorship&message=%E2%9D%A4&logo=GitHub&color=bf3889)](https://github.com/sponsors/EarthAsylum)
+
+<details><summary>Plugin Header</summary>
+
 Plugin URI:         https://swregistry.earthasylum.com/software-taxonomy/  
 Author:             [EarthAsylum Consulting](https://www.earthasylum.com)  
-Last Updated:       08-Mar-2024  
+Last Updated:       21-Aug-2026  
 Contributors:       [kevinburkholder](https://profiles.wordpress.org/kevinburkholder)  
 Donate link:        https://github.com/sponsors/EarthAsylum  
+License:            GPLv3 or later  
+License URI:        https://www.gnu.org/licenses/gpl.html  
 WordPress URI:      https://wordpress.org/plugins/eacsoftwareregistry-software-taxonomy  
 Github URI:         https://github.com/EarthAsylum/eacsoftwareregistry-software-taxonomy  
+
+</details>
 
 > Software Product Taxonomy - Github Hosting provides "self-hosting" and automatic updates of your WordPress plugins on Github.
 
@@ -33,9 +44,32 @@ If necessary, *custom properties* can be set in your github repository to provid
 
 You may also set a custom property named `wp-sections` with a comma delimited list of section names (tabs) to be pulled from the readme.txt file. This is used to filter out unwanted sections or include non-standard sections (e.g. `wp-sections = "description,changelog,extra-details"`)
 
-When creating an installation zip file, your repository is downloaded to your WordPress server, extracted, and a new zip file is created. By default, root hidden files are ignored as well as folders named `.wp-assets`,`.wordpress-org`, or `wp-assets`. If present, a file named `.distignore` will be used to determine the files or folders to ignore. `.distignore` is simply a list of file names that should not be included in your plugin installer zip.
+When creating an installation zip file, your repository is downloaded to your WordPress server, extracted, and a new zip file is created. By default, root hidden files are ignored as well as folders named `.wp-assets`,`.wordpress-org`, or `wp-assets`. A `.gitattributes` file (used by GitHub) in your repository may exclude files from being downloaded. If present, a `.distignore` file will be used to determine the files or folders to exclude from the final zip archive. `.distignore` is a list of file names (or patterns) that should not be included in your plugin installer zip.
 
-Rather than having the zip file created, you can manually create the file and include it as an asset when creating a new release in your repository. This zip file will be assumed to be a complete plugin installer zip and will be used as-is. The name of this file should be {pluginname}-{version}.zip
+__.gitattributes__ (used by GitHub when creating/downloading a repository zip archive)
+
+```
+    # Exclude Hidden
+    .*      export-ignore
+    
+    # Exclude Directories
+    /docs   export-ignore
+```
+
+__.distignore__ (used by this process to filter files excluded from the plugin installer)
+
+```    
+    # Exclude Hidden
+    /.+
+    
+    # Exclude Directories
+    /docs
+
+    # Explicitly Allowed
+    !readme.md
+```
+
+Rather than having the zip file created, you can manually create the file and include it as an asset when creating a new release in your repository. This zip file will be assumed to be a complete plugin installer zip and will be used as-is. The name of this file may be `{pluginname}.{version}.zip`, `{pluginname}-{version}.zip`, `{pluginname}_{version}.zip`, or `{pluginname}.zip`. `{version}` must match the release tag name or the `Stable tag` in the readme.txt file.
 
 Additionally, any image assets in one of the aforementioned folders are downloaded so that they may be used to display banners, icons, or screenshots via your readme file in the WordPress plugin update tabs. Using one of these folders is a good way to store images that should not be included in your plugin installer.
 
@@ -82,6 +116,9 @@ Additionally, any image assets in one of the aforementioned folders are download
     +   Enables and names the log file (in JSON format).
 +   `define('EAC_GITHUB_CDN_HOST','https://cdn_host/path/')`
     +   To use a CDN, replaces the default ('/wp-json/softwareregistry/v1') or shortcut url with this CDN url.
++   `define('GITHUB_ACCESS_TOKEN', 'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');`
+    +   Your GitHub personal access token, pre-populates the value in the *Github Hosting* settings.
+
 
 __Recommended__:
 
